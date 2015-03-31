@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+        <action>
+            <actionName>CUSTOM-Debug integration test</actionName>
+            <displayName>Debug integration test</displayName>
+            <goals>
+                <goal>verify</goal>
+            </goals>
+            <properties>
+                <maven.failsafe.debug>-Xdebug -Xrunjdwp:transport=dt_socket,suspend=y,address=${jpda.address} -Xnoagent -Djava.compiler=NONE</maven.failsafe.debug>
+                <jpda.listen>true</jpda.listen>
+            </properties>
+        </action>
+    </actions>

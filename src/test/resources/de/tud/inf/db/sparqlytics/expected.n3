@@ -1,0 +1,30 @@
+@prefix sl:    <http://tu-dresden.de/sparqlytics/> .
+@prefix sn:    <http://www.ldbc.eu/ldbc_socialnet/1.0/data/> .
+@prefix snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix dbpedia: <http://dbpedia.org/resource/> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+[ <sl:inLevel>       [ <sl:levelMember>  17 ] ;
+  <sl:inLevel>       [ <sl:levelMember>  dbpedia:New_York ] ;
+  <sl:measureName>   "Avg. No. Languages" ;
+  <sl:measureValue>  1.0
+] .
+
+[ <sl:inLevel>       [ <sl:levelMember>  17 ] ;
+  <sl:inLevel>       [ <sl:levelMember>  dbpedia:New_York ] ;
+  <sl:measureName>   "Max. Comment Length" ;
+  <sl:measureValue>  18
+] .
+
+[ <sl:inLevel>       [ <sl:levelMember>  11 ] ;
+  <sl:inLevel>       [ <sl:levelMember>  dbpedia:San_Diego ] ;
+  <sl:measureName>   "Avg. No. Languages" ;
+  <sl:measureValue>  2.0
+] .
+
+[ <sl:inLevel>       [ <sl:levelMember>  11 ] ;
+  <sl:inLevel>       [ <sl:levelMember>  dbpedia:San_Diego ] ;
+  <sl:measureName>   "Max. Comment Length" ;
+  <sl:measureValue>  247
+] .
