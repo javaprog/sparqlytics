@@ -1,0 +1,4 @@
+SLICE ("Location", "Country", dbpedia:Italy);
+DICE ("Date of Birth", "Year" AS ?year, YEAR(NOW()) - ?year < 65);
+ROLLUP ("Date of Birth", 2);
+COMPUTE ("Avg. No. Languages", "Max. Comment Length");

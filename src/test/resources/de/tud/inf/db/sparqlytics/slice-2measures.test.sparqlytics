@@ -1,0 +1,2 @@
+SLICE ("Location", "Country", <http://dbpedia.org/resource/USA>);
+COMPUTE ("Avg. No. Languages", "Max. Comment Length");

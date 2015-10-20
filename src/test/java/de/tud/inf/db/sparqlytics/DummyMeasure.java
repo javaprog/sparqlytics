@@ -16,37 +16,25 @@
 
 package de.tud.inf.db.sparqlytics;
 
-import java.io.IOException;
-import org.apache.jena.riot.Lang;
-import org.junit.Test;
+import com.hp.hpl.jena.graph.NodeFactory;
+import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.sparql.core.BasicPattern;
+import com.hp.hpl.jena.sparql.expr.NodeValue;
+import com.hp.hpl.jena.sparql.syntax.ElementTriplesBlock;
+import de.tud.inf.db.sparqlytics.model.Measure;
+import java.util.Collections;
 
 /**
- * Integration test.
+ * Helper class for tests. All properties except for the name are set to dummy
+ * values.
  *
  * @author Michael Rudolf
  */
-public class IT extends ITBase {
-    public IT() {
-        super(IT.class.getResource("fixture.sparqlytics"));
-    }
-
-    @Test
-    public void test1Measure() throws IOException {
-        testIsomorphism(Lang.N3, "1measure");
-    }
-
-    @Test
-    public void testSliceDiceRollup1Measure() throws IOException {
-        testIsomorphism(Lang.N3, "slice-dice-rollup-1measure");
-    }
-
-    @Test
-    public void testSlice2Measures() throws IOException {
-        testIsomorphism(Lang.N3, "slice-2measures");
-    }
-
-    @Test
-    public void testSliceDiceRollup2Measures() throws IOException {
-        testIsomorphism(Lang.N3, "slice-dice-rollup-2measures");
+public class DummyMeasure extends Measure {
+    public DummyMeasure(String name) {
+        super(name, new ElementTriplesBlock(BasicPattern.wrap(
+            Collections.singletonList(Triple.createMatch(
+                    NodeFactory.createVariable("test"), null, null)))),
+                NodeValue.TRUE, "COUNT");
     }
 }

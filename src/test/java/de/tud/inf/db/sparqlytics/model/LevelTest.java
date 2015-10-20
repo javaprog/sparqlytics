@@ -14,39 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package de.tud.inf.db.sparqlytics;
+package de.tud.inf.db.sparqlytics.model;
 
-import java.io.IOException;
-import org.apache.jena.riot.Lang;
+import com.hp.hpl.jena.sparql.expr.NodeValue;
 import org.junit.Test;
 
 /**
- * Integration test.
+ * Tests the level class.
  *
  * @author Michael Rudolf
  */
-public class IT extends ITBase {
-    public IT() {
-        super(IT.class.getResource("fixture.sparqlytics"));
+public class LevelTest {
+    @Test(expected = NullPointerException.class)
+    public void testInstantiateWithNullName() {
+        new Level(null, NodeValue.TRUE);
     }
 
-    @Test
-    public void test1Measure() throws IOException {
-        testIsomorphism(Lang.N3, "1measure");
-    }
-
-    @Test
-    public void testSliceDiceRollup1Measure() throws IOException {
-        testIsomorphism(Lang.N3, "slice-dice-rollup-1measure");
-    }
-
-    @Test
-    public void testSlice2Measures() throws IOException {
-        testIsomorphism(Lang.N3, "slice-2measures");
-    }
-
-    @Test
-    public void testSliceDiceRollup2Measures() throws IOException {
-        testIsomorphism(Lang.N3, "slice-dice-rollup-2measures");
+    @Test(expected = NullPointerException.class)
+    public void testInstantiateWithNullExpression() {
+        new Level("test", null);
     }
 }

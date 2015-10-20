@@ -20,6 +20,10 @@ import arq.cmd.CmdException;
 import arq.cmd.TerminationException;
 import arq.cmdline.ArgDecl;
 import arq.cmdline.CmdGeneral;
+import com.codahale.metrics.MetricRegistry;
+import de.tud.inf.db.sparqlytics.parser.ParseException;
+import de.tud.inf.db.sparqlytics.parser.SPARQLyticsParser;
+import de.tud.inf.db.sparqlytics.parser.TokenMgrError;
 import java.io.*;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFLanguages;
@@ -31,32 +35,40 @@ import org.apache.jena.riot.RDFLanguages;
  */
 public class Main extends CmdGeneral {
     private static Main instance;
-    
+
+    /**
+     * Registry for collecting METRICS of the program execution.
+     */
+    public static final MetricRegistry METRICS = new MetricRegistry();
+
     /**
      * The input argument declaration.
      */
-    private final ArgDecl inputDecl = new ArgDecl(ArgDecl.HasValue, "--input");
-    
+    private final ArgDecl inputDecl =
+            new ArgDecl(ArgDecl.HasValue, "--input");
+
     /**
      * The output argument declaration.
      */
-    private final ArgDecl outputDecl = new ArgDecl(ArgDecl.HasValue, "--output");
-    
+    private final ArgDecl outputDecl =
+            new ArgDecl(ArgDecl.HasValue, "--output");
+
     /**
      * The output format argument declaration.
      */
-    private final ArgDecl outputFormatDecl = new ArgDecl(ArgDecl.HasValue, "--outputFormat");
-    
+    private final ArgDecl outputFormatDecl =
+            new ArgDecl(ArgDecl.HasValue, "--outputFormat");
+
     private Reader input;
     private boolean interactive;
     private File output;
     private Lang outputFormat;
-    
+
     /**
      * Creates a new instance for processing the given command line arguments.
-     * 
+     *
      * @param args the command line arguments to process
-     * @throws NullPointerException if the parameter is <code>null</code>
+     * @throws NullPointerException if the parameter is {@code null}
      */
     private Main(String[] args) {
         super(args);
@@ -64,10 +76,10 @@ public class Main extends CmdGeneral {
                 "Reads from standard input if not specified.");
         add(outputDecl, "--output <file>", "The file to write results to. " +
                 "Writes to standard output if not specified.");
-        add(outputFormatDecl, "--outputFormat <fmt>", 
+        add(outputFormatDecl, "--outputFormat <fmt>",
                 "The output format to use.");
     }
-    
+
     @Override
     protected String getSummary() {
         return "java -jar sparqlytics-<version>-dist.jar [--input <file>] [--output <file>]";
@@ -121,7 +133,8 @@ public class Main extends CmdGeneral {
                 parser.CubeDefinition();
             } catch (ParseException | TokenMgrError | RuntimeException ex) {
                 System.err.println(ex.getLocalizedMessage());
-                throw (TerminationException)new TerminationException(1).initCause(ex);
+                throw (TerminationException)
+                        new TerminationException(1).initCause(ex);
             }
             boolean keepGoing = true;
             do {
@@ -137,7 +150,8 @@ public class Main extends CmdGeneral {
                 parser.Start();
             } catch (ParseException | TokenMgrError | RuntimeException ex) {
                 System.err.println(ex.getLocalizedMessage());
-                throw (TerminationException)new TerminationException(1).initCause(ex);
+                throw (TerminationException)
+                        new TerminationException(1).initCause(ex);
             }
         }
     }
@@ -146,10 +160,10 @@ public class Main extends CmdGeneral {
     public boolean isDebug() {
         return super.isDebug();
     }
-    
+
     /**
      * Returns the instance the program was run with or a dummy instance.
-     * 
+     *
      * @return an instance encapsulating the program settings
      */
     public static Main getInstance() {
@@ -158,12 +172,12 @@ public class Main extends CmdGeneral {
         }
         return instance;
     }
-    
+
     /**
      * The application's main method.
-     * 
+     *
      * @param args the command line arguments to process
-     * @throws NullPointerException if the parameter is <code>null</code>
+     * @throws NullPointerException if the parameter is {@code null}
      */
     public static void main(String[] args) {
         instance = new Main(args);

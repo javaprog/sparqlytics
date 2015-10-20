@@ -11,4 +11,28 @@
                 <jpda.listen>true</jpda.listen>
             </properties>
         </action>
+        <action>
+            <actionName>CUSTOM-Benchmark</actionName>
+            <displayName>Benchmark</displayName>
+            <goals>
+                <goal>test</goal>
+            </goals>
+            <activatedProfiles>
+                <activatedProfile>benchmark</activatedProfile>
+            </activatedProfiles>
+        </action>
+        <action>
+            <actionName>CUSTOM-Debug benchmark</actionName>
+            <displayName>Debug benchmark</displayName>
+            <goals>
+                <goal>test</goal>
+            </goals>
+            <properties>
+                <maven.surefire.debug>-Xdebug -Xrunjdwp:transport=dt_socket,suspend=y,address=${jpda.address} -Xnoagent -Djava.compiler=NONE</maven.surefire.debug>
+                <jpda.listen>true</jpda.listen>
+            </properties>
+            <activatedProfiles>
+                <activatedProfile>benchmark</activatedProfile>
+            </activatedProfiles>
+        </action>
     </actions>

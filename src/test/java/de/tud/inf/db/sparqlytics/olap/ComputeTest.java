@@ -14,39 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package de.tud.inf.db.sparqlytics;
+package de.tud.inf.db.sparqlytics.olap;
 
-import java.io.IOException;
-import org.apache.jena.riot.Lang;
 import org.junit.Test;
 
 /**
- * Integration test.
+ * Tests the compute operation.
  *
  * @author Michael Rudolf
  */
-public class IT extends ITBase {
-    public IT() {
-        super(IT.class.getResource("fixture.sparqlytics"));
-    }
-
-    @Test
-    public void test1Measure() throws IOException {
-        testIsomorphism(Lang.N3, "1measure");
-    }
-
-    @Test
-    public void testSliceDiceRollup1Measure() throws IOException {
-        testIsomorphism(Lang.N3, "slice-dice-rollup-1measure");
-    }
-
-    @Test
-    public void testSlice2Measures() throws IOException {
-        testIsomorphism(Lang.N3, "slice-2measures");
-    }
-
-    @Test
-    public void testSliceDiceRollup2Measures() throws IOException {
-        testIsomorphism(Lang.N3, "slice-dice-rollup-2measures");
+public class ComputeTest {
+    @Test(expected = NullPointerException.class)
+    public void testInstantiateWithNull() {
+        new Compute(null);
     }
 }

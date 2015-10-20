@@ -1,0 +1,12 @@
+@prefix sl:    <http://tu-dresden.de/sparqlytics/> .
+@prefix sn:    <http://www.ldbc.eu/ldbc_socialnet/1.0/data/> .
+@prefix snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix dbpedia: <http://dbpedia.org/resource/> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+[ <sl:inLevel>       [ <sl:levelMember>  dbpedia:Florence ] ;
+  <sl:inLevel>       [ <sl:levelMember>  1986 ] ;
+  <sl:measureName>   "Avg. No. Languages" ;
+  <sl:measureValue>  3.0
+] .
