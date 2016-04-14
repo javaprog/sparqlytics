@@ -1,0 +1,15 @@
+USING REPOSITORY "ldbc";
+PREFIX snvoc:   <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>
+SELECT FACTS {
+  ?m snvoc:hasCreator/snvoc:isLocatedIn/snvoc:isPartOf <${country}>
+};
+
+CREATE CUBE "Holiday Destinations" FROM "Creation Day/Month/Year", "Message Location"
+WITH "Msg. Count";
+
+USING CUBE "Holiday Destinations" OVER <${sparql.endpoint}>;
+DICE("Message Location", "Country" AS ?country, ?country != <${country}>);
+ROLLUP("Creation Day/Month/Year", 1); # Month
+COMPUTE("Msg. Count")
+ORDER BY "Msg. Count" DESC, "Message Location" ASC, "Creation Day/Month/Year" ASC
+LIMIT 100;

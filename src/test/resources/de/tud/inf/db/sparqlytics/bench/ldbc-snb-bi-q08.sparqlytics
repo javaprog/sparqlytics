@@ -1,0 +1,15 @@
+USING REPOSITORY "ldbc";
+PREFIX snvoc:   <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>
+SELECT FACTS {
+  ?m snvoc:replyOf [ snvoc:hasTag <${tag}> ] .
+  ?m snvoc:hasTag ?tag .
+  FILTER NOT EXISTS { ?m snvoc:hasTag <${tag}> }
+};
+
+DEFINE MEASURE "Reply Count" AS COUNT(?m) WHERE (?m snvoc:hasTag ?tag) WITH "SUM";
+
+CREATE CUBE "Related Topics" FROM "Tag Name" WITH "Reply Count";
+
+USING CUBE "Related Topics" OVER <${sparql.endpoint}>;
+COMPUTE("Reply Count")
+ORDER BY "Reply Count" DESC, "Tag Name" ASC;

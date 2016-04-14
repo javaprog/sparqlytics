@@ -16,9 +16,6 @@
 
 package de.tud.inf.db.sparqlytics.model;
 
-import com.hp.hpl.jena.sparql.core.Var;
-import com.hp.hpl.jena.sparql.syntax.Element;
-import com.hp.hpl.jena.sparql.syntax.PatternVars;
 import de.tud.inf.db.sparqlytics.repository.FixedRepository;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,6 +23,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import org.apache.jena.sparql.core.Var;
+import org.apache.jena.sparql.syntax.Element;
+import org.apache.jena.sparql.syntax.PatternVars;
 
 /**
  * Represents a cube consisting of facts, dimensions and measures.
@@ -61,11 +61,16 @@ public class Cube extends NamedObject {
             final Set<Dimension> dimensions, final Set<Measure> measures) {
         super(name);
         if (factPattern == null) {
-            throw new NullPointerException();
+            throw new NullPointerException(
+                    "No fact pattern provided for cube \"" + name + "\"");
         }
         this.factPattern = factPattern;
-        if (dimensions.isEmpty() || measures.isEmpty()) {
-            throw new IllegalArgumentException();
+        if (dimensions.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "No dimensions provided for cube \"" + name + "\"");
+        } else if (measures.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "No measures provided for cube \"" + name + "\"");
         }
         final Collection<Var> factPatternVars = PatternVars.vars(factPattern);
         for (Dimension dimension : dimensions) {
@@ -74,8 +79,8 @@ public class Cube extends NamedObject {
             vars.retainAll(factPatternVars);
             if (vars.isEmpty()) {
                 throw new IllegalArgumentException("Dimension \"" +
-                        dimension.getName() +
-                        "\" does not reference any fact pattern variables");
+                        dimension.getName() + "\" does not reference any fact " +
+                        "pattern variables in cube \"" + name + "\"");
             }
         }
         for (Measure measure : measures) {
@@ -83,9 +88,9 @@ public class Cube extends NamedObject {
             PatternVars.vars(vars, measure.getSeedPattern());
             vars.retainAll(factPatternVars);
             if (vars.isEmpty()) {
-                throw new IllegalArgumentException("Dimension \"" +
-                        measure.getName() +
-                        "\" does not reference any fact pattern variables");
+                throw new IllegalArgumentException("Measure \"" +
+                        measure.getName() + "\" does not reference any fact " +
+                        "pattern variables in cube \"" + name + "\"");
             }
         }
         this.impl = new FixedRepository(Collections.<Cube>emptySet(),

@@ -16,11 +16,11 @@
 
 package de.tud.inf.db.sparqlytics.model;
 
-import com.hp.hpl.jena.sparql.expr.NodeValue;
-import com.hp.hpl.jena.sparql.syntax.ElementGroup;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.apache.jena.sparql.expr.NodeValue;
+import org.apache.jena.sparql.syntax.ElementGroup;
 import static org.junit.Assert.*;
 import org.junit.Test;
 

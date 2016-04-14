@@ -16,8 +16,8 @@
 
 package de.tud.inf.db.sparqlytics.model;
 
-import com.hp.hpl.jena.sparql.expr.NodeValue;
-import com.hp.hpl.jena.sparql.syntax.ElementGroup;
+import org.apache.jena.sparql.expr.NodeValue;
+import org.apache.jena.sparql.syntax.ElementGroup;
 import org.junit.Test;
 
 /**

@@ -16,15 +16,13 @@
 
 package de.tud.inf.db.sparqlytics.model;
 
-import com.hp.hpl.jena.query.Query;
-import com.hp.hpl.jena.query.Syntax;
 import de.tud.inf.db.sparqlytics.olap.Operation;
-import java.io.BufferedWriter;
+import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
+import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
@@ -33,7 +31,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.jena.query.Query;
+import org.apache.jena.query.Syntax;
 import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFLanguages;
+import org.apache.jena.sparql.resultset.ResultsFormat;
 
 /**
  * Represents an analytical session, which encapsulates a cube and its filters
@@ -61,7 +63,7 @@ public class Session {
      * The output format to use for the computed measures. {@code null}
      * implies &quot;RDF/XML&quot;.
      */
-    private Lang outputFormat;
+    private ResultsFormat resultsFormat;
     
     /**
      * The cube to use for OLAP operations.
@@ -122,27 +124,31 @@ public class Session {
      *
      * @see #setSink
      */
-    public Writer getOutput() throws IOException {
+    public OutputStream getOutput() throws IOException {
         if (sink == null) {
             //System.out must not be closed
-            return new PrintWriter(System.out) {
+            return new FilterOutputStream(System.out) {
                 @Override
                 public void close() {}
             };
         } else if (sink.isFile()) {
-            return new BufferedWriter(new FileWriter(sink, true));
+            return new BufferedOutputStream(new FileOutputStream(sink, true));
         } else {
-            Lang format = getOutputFormat();
+            ResultsFormat format = getResultsFormat();
             if (format == null) {
-                format = Lang.RDFXML;
+                format = ResultsFormat.FMT_RDF_XML;
             }
-            List<String> extensions = format.getFileExtensions();
+            Lang lang = ResultsFormat.convert(format);
+            if (lang == null) {
+                lang = RDFLanguages.contentTypeToLang(format.getSymbol());
+            }
+            List<String> extensions = lang.getFileExtensions();
             StringBuilder name = new StringBuilder(
                     dateFormat.format(new Date()));
             if (!extensions.isEmpty()) {
                 name.append('.').append(extensions.get(0));
             }
-            return new BufferedWriter(new FileWriter(
+            return new BufferedOutputStream(new FileOutputStream(
                     new File(sink, name.toString())));
         }
     }
@@ -153,22 +159,22 @@ public class Session {
      *
      * @return the output format
      *
-     * @see #setOutputFormat
+     * @see #setResultsFormat
      */
-    public Lang getOutputFormat() {
-        return outputFormat;
+    public ResultsFormat getResultsFormat() {
+        return resultsFormat;
     }
 
     /**
      * Sets the output format to use for the computed measures.
      * {@code null} implies &quot;RDF/XML&quot;.
      *
-     * @param outputFormat the output format to use
+     * @param resultsFormat the output format to use
      *
-     * @see #getOutputFormat
+     * @see #getResultsFormat
      */
-    public void setOutputFormat(final Lang outputFormat) {
-        this.outputFormat = outputFormat;
+    public void setResultsFormat(final ResultsFormat resultsFormat) {
+        this.resultsFormat = resultsFormat;
     }
     
     /**

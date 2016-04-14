@@ -16,16 +16,16 @@
 
 package de.tud.inf.db.sparqlytics.olap;
 
-import com.hp.hpl.jena.graph.NodeFactory;
-import com.hp.hpl.jena.graph.Triple;
-import com.hp.hpl.jena.sparql.core.BasicPattern;
 import de.tud.inf.db.sparqlytics.model.Session;
 import de.tud.inf.db.sparqlytics.model.Dimension;
-import com.hp.hpl.jena.sparql.syntax.ElementTriplesBlock;
 import de.tud.inf.db.sparqlytics.DummyDimension;
 import de.tud.inf.db.sparqlytics.DummyMeasure;
 import de.tud.inf.db.sparqlytics.parser.CubeBuilder;
 import java.util.Collections;
+import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.graph.Triple;
+import org.apache.jena.sparql.core.BasicPattern;
+import org.apache.jena.sparql.syntax.ElementTriplesBlock;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -49,12 +49,12 @@ public class RollUpTest {
     public void testRun() {
         RollUp instance = new RollUp("dim1", 1);
         Session session = new Session();
-        CubeBuilder builder = new CubeBuilder("", new ElementTriplesBlock(
+        CubeBuilder builder = new CubeBuilder(new ElementTriplesBlock(
                 BasicPattern.wrap(Collections.singletonList(Triple.createMatch(
                         NodeFactory.createVariable("test"), null, null))))).
                 addMeasure(new DummyMeasure("mes1"));
         Dimension dim1 = new DummyDimension("dim1");
-        session.setCube(builder.addDimension(dim1).build());
+        session.setCube(builder.addDimension(dim1).build(""));
         Assert.assertEquals(0, session.getGranularity(dim1));
         session.execute(instance);
         Assert.assertEquals(1, session.getGranularity(dim1));

@@ -16,10 +16,6 @@
 
 package de.tud.inf.db.sparqlytics.model;
 
-import com.hp.hpl.jena.sparql.core.Var;
-import com.hp.hpl.jena.sparql.expr.ExprVars;
-import com.hp.hpl.jena.sparql.syntax.Element;
-import com.hp.hpl.jena.sparql.syntax.PatternVars;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,6 +23,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.jena.sparql.core.Var;
+import org.apache.jena.sparql.expr.ExprVars;
+import org.apache.jena.sparql.syntax.Element;
+import org.apache.jena.sparql.syntax.PatternVars;
 
 /**
  * Represents a dimension.

@@ -1,0 +1,5 @@
+USING REPOSITORY "ldbc";
+USING CUBE "High Level Topics" OVER <${sparql.endpoint}>;
+COMPUTE("Post Count")
+ORDER BY "Post Count" DESC, "TagClass Name" ASC
+LIMIT 100;

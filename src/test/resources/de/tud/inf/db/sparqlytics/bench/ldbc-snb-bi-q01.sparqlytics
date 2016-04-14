@@ -1,0 +1,8 @@
+USING REPOSITORY "ldbc";
+PREFIX xsd:     <http://www.w3.org/2001/XMLSchema#>
+USING CUBE "Messages" OVER <${sparql.endpoint}>;
+DICE("Creation Date", "Day" AS ?day, ?day < xsd:dateTime("${date}"^^xsd:date));
+ROLLUP("Creation Date", 2);      # Year
+ROLLUP("Message ID", 1);         # ALL
+COMPUTE("Msg. Count", "Avg. Msg. Length", "Sum Msg. Length")
+ORDER BY "Creation Date" ASC, "Message Type" DESC, "Length Class" ASC;

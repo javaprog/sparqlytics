@@ -16,7 +16,6 @@
 
 package de.tud.inf.db.sparqlytics;
 
-import com.hp.hpl.jena.rdf.model.Model;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileAttribute;
+import org.apache.jena.rdf.model.Model;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 

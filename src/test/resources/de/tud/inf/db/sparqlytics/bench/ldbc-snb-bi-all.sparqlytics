@@ -1,0 +1,320 @@
+# All implemented queries in succession with query-specific parameters replaced
+
+PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX snvoc:   <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>
+PREFIX dbpedia: <http://dbpedia.org/resource/>
+PREFIX xsd:     <http://www.w3.org/2001/XMLSchema#>
+
+# Messages (Q01) ###############################################################
+
+SELECT FACTS { # should use entailment
+  { {?m rdf:type snvoc:Post} UNION {?m rdf:type snvoc:Comment} }
+  ?m snvoc:hasCreator ?person
+};
+DEFINE DIMENSION "Creation Date" FROM (?m snvoc:creationDate ?creationDate) WITH (
+  LEVEL "Day" AS CONCAT(xsd:string(DAY(xsd:dateTime(?creationDate))), "-",
+                        xsd:string(MONTH(xsd:dateTime(?creationDate))), "-",
+                        xsd:string(YEAR(xsd:dateTime(?creationDate)))),
+  LEVEL "Month" AS CONCAT(xsd:string(MONTH(xsd:dateTime(?creationDate))), "-",
+                          xsd:string(YEAR(xsd:dateTime(?creationDate)))),
+  LEVEL "Year" AS YEAR(xsd:dateTime(?creationDate))
+);
+DEFINE DIMENSION "Message ID" FROM (?m snvoc:id ?messageID) WITH (
+  LEVEL "" AS ?messageID
+);
+DEFINE DIMENSION "Message Type" FROM (?m rdf:type ?t) WITH (
+  LEVEL "" AS SUBSTR(xsd:string(?t), 40)
+);
+DEFINE DIMENSION "Length Class" FROM (?m snvoc:length ?length) WITH (
+  LEVEL "" AS IF(?length < 40, "short",
+              IF(?length < 80, "one liner",
+              IF(?length < 160, "tweet", "long")))
+);
+DEFINE DIMENSION "Person ID" FROM (?person snvoc:id ?personID) WITH (
+  LEVEL "" AS ?personID
+);
+DEFINE DIMENSION "First Name" FROM (?person snvoc:firstName ?firstName) WITH (
+  LEVEL "" AS ?firstName
+);
+DEFINE DIMENSION "Last Name" FROM (?person snvoc:lastName ?lastName) WITH (
+  LEVEL "" AS ?lastName
+);
+DEFINE MEASURE "Avg. Msg. Length" AS ?length
+         WHERE (?m snvoc:length ?length) WITH "AVG";
+DEFINE MEASURE "Sum Msg. Length" AS ?length
+         WHERE (?m snvoc:length ?length) WITH "SUM";
+DEFINE MEASURE "Msg. Count" AS ?m  # triple pattern unneeded
+         WHERE (?m snvoc:hasCreator ?person) WITH "COUNT";
+DEFINE MEASURE "Like Count" AS COUNT(?like) WHERE (
+  ?like snvoc:hasComment|snvoc:hasPost ?m
+) WITH "COUNT";
+CREATE CUBE "Messages"
+FROM "Creation Date", "Message ID", "Message Type", "Length Class", "Person ID",
+     "First Name", "Last Name"
+WITH "Msg. Count", "Avg. Msg. Length", "Sum Msg. Length", "Like Count";
+USING CUBE "Messages" OVER <${sparql.endpoint}>;
+DICE("Creation Date", "Day" AS ?day, ?day < xsd:dateTime("2014-01-01"^^xsd:date));
+ROLLUP("Creation Date", 2);      # Year
+ROLLUP("Message ID", 1);         # ALL
+COMPUTE("Msg. Count", "Avg. Msg. Length", "Sum Msg. Length")
+ORDER BY "Creation Date" ASC, "Message Type" DESC, "Length Class" ASC;
+
+# Messages & Tags (Q02) ########################################################
+
+SELECT FACTS { # should use entailment
+  { {?m rdf:type snvoc:Post} UNION {?m rdf:type snvoc:Comment} }
+  ?m snvoc:hasCreator ?person .
+  ?m snvoc:hasTag ?tag
+};
+DEFINE DIMENSION "Location" FROM (
+  ?person  snvoc:isLocatedIn ?city .
+  ?city    snvoc:isPartOf ?country .
+  ?country snvoc:isPartOf ?continent
+) WITH (
+  LEVEL "City" AS ?city,
+  LEVEL "Country" AS ?country,
+  LEVEL "Continent" AS ?continent
+);
+DEFINE DIMENSION "Creation Day/Month/Year" FROM (?m snvoc:creationDate ?creationDate) WITH (
+  LEVEL "Day" AS DAY(xsd:dateTime(?creationDate)),
+  LEVEL "Month" AS MONTH(xsd:dateTime(?creationDate)),
+  LEVEL "Year" AS YEAR(xsd:dateTime(?creationDate))
+);
+DEFINE DIMENSION "Gender" FROM (?person snvoc:gender ?gender) WITH (
+  LEVEL "" AS ?gender
+);
+DEFINE DIMENSION "Age Group" FROM (?person snvoc:birthday ?birthday) WITH (
+  LEVEL "" AS FLOOR((2013 - YEAR(?birthday))/5)
+);
+DEFINE DIMENSION "Tag Name" FROM (?tag snvoc:name ?name) WITH (
+  LEVEL "" AS ?name
+);
+CREATE CUBE "Messages & Tags"
+FROM "Location", "Creation Date", "Creation Day/Month/Year", "Gender", "Age Group", "Tag Name"
+WITH "Msg. Count";
+USING CUBE "Messages & Tags" OVER <${sparql.endpoint}>;
+DICE("Location", "Country" AS ?country, ?country=dbpedia:Germany || ?country=dbpedia:Italy);
+ROLLUP("Location", 1);                # Country
+ROLLUP("Creation Day/Month/Year", 1); # Month
+ROLLUP("Creation Date", 3);           # ALL
+COMPUTE("Msg. Count")
+ORDER BY "Msg. Count" DESC, "Tag Name" ASC, "Age Group" ASC, "Gender" ASC,
+         "Creation Day/Month/Year" ASC, "Location" ASC LIMIT 100;
+
+# Messages & Tags (Q03) ########################################################
+
+DICE("Creation Date", "Month" AS ?month, ?month IN ("2002-5",
+     IF(5 = 12, CONCAT(STR(2002 + 1), "-5"),
+                       CONCAT("2002-", STR(5 + 1)))));
+ROLLUP("Creation Date", 1);           # Month
+ROLLUP("Creation Day/Month/Year", 3); # ALL
+ROLLUP("Location", 1);                # ALL
+ROLLUP("Gender", 1);                  # ALL
+ROLLUP("Age Group", 1);               # ALL
+COMPUTE("Msg. Count")
+ORDER BY "Tag Name" ASC;
+
+# Forums, Posts & Tag Classes (Q04) ############################################
+
+SELECT FACTS {
+  ?forum snvoc:containerOf ?post
+};
+DEFINE DIMENSION "Forum" FROM (?forum snvoc:containerOf ?post) WITH (
+  LEVEL "" AS ?forum
+);
+DEFINE DIMENSION "Post" FROM (?forum snvoc:containerOf ?post) WITH (
+  LEVEL "" AS ?post
+);
+DEFINE DIMENSION "Tag Class" FROM (
+  ?forum snvoc:containerOf ?post .
+  ?post  snvoc:hasTag ?tag .
+  ?tag   rdf:type ?class
+) WITH (
+  LEVEL "" AS ?class
+);
+DEFINE DIMENSION "Forum Creation Date" FROM (?forum snvoc:creationDate ?date) WITH (
+  LEVEL "" AS ?date
+);
+DEFINE DIMENSION "Forum Title" FROM (?forum snvoc:title ?title) WITH (
+  LEVEL "" AS ?title
+);
+DEFINE DIMENSION "Forum ID" FROM (?forum snvoc:id ?forumID) WITH (
+  LEVEL "" AS ?forumID
+);
+DEFINE DIMENSION "Moderator Location" FROM (
+  ?forum   snvoc:hasModerator ?person .
+  ?person  snvoc:isLocatedIn ?city .
+  ?city    snvoc:isPartOf ?country .
+  ?country snvoc:isPartOf ?continent
+) WITH (
+  LEVEL "City" AS ?city,
+  LEVEL "Country" AS ?country,
+  LEVEL "Continent" AS ?continent
+);
+DEFINE DIMENSION "Moderator ID" FROM (
+  ?forum snvoc:hasModerator ?person .
+  ?person snvoc:id ?moderatorID
+) WITH (
+  LEVEL "" AS ?moderatorID
+);
+DEFINE MEASURE "Contained Post Count" AS ?post  # triple pattern unneeded
+         WHERE (?forum snvoc:containerOf ?post) WITH "COUNT";
+CREATE CUBE "Forums, Posts & Tag Classes"
+FROM "Forum", "Post", "Tag Class", "Forum Creation Date", "Forum Title",
+     "Forum ID", "Moderator Location", "Moderator ID"
+WITH "Contained Post Count";
+USING CUBE "Forums, Posts & Tag Classes" OVER <${sparql.endpoint}>;
+SLICE("Moderator Location", "Country", dbpedia:Germany);
+SLICE("Tag Class", "", dbpedia:Company);
+ROLLUP("Post", 1);                 # ALL
+ROLLUP("Tag Class", 1);            # ALL
+COMPUTE("Contained Post Count")
+ORDER BY "Contained Post Count" DESC, "Forum ID" ASC;
+
+# Top Posters in Country (Q05) #################################################
+
+SELECT FACTS {
+  {
+    SELECT ?forum WHERE {
+      ?forum  snvoc:hasMember [ snvoc:hasPerson ?person ] .
+      ?person snvoc:isLocatedIn/snvoc:isPartOf dbpedia:Germany
+    }
+    GROUP BY ?forum ORDER BY DESC(COUNT(*)) LIMIT 100
+  }
+  ?forum snvoc:hasMember [ snvoc:hasPerson ?person ]
+};
+DEFINE MEASURE "Person Post Count" AS COUNT(?post) WHERE (
+  ?forum snvoc:containerOf ?post .
+  ?post  snvoc:hasCreator ?person
+) WITH "SUM";
+CREATE CUBE "Top Posters in Country" FROM "Person ID", "First Name", "Last Name"
+WITH "Person Post Count";
+USING CUBE "Top Posters in Country" OVER <${sparql.endpoint}>;
+COMPUTE("Person Post Count")
+ORDER BY "Person Post Count" DESC, "Person ID" ASC LIMIT 100;
+
+# Related Topics (Q08) #########################################################
+
+SELECT FACTS {
+  ?m snvoc:replyOf [ snvoc:hasTag dbpedia:Germany ] .
+  ?m snvoc:hasTag ?tag .
+  FILTER NOT EXISTS { ?m snvoc:hasTag dbpedia:Germany }
+};
+DEFINE MEASURE "Reply Count" AS COUNT(?m) WHERE (?m snvoc:hasTag ?tag) WITH "SUM";
+CREATE CUBE "Related Topics" FROM "Tag Name" WITH "Reply Count";
+USING CUBE "Related Topics" OVER <${sparql.endpoint}>;
+COMPUTE("Reply Count")
+ORDER BY "Reply Count" DESC, "Tag Name" ASC;
+
+# Unrelated Replies (Q11) ######################################################
+
+SELECT FACTS {
+  ?m snvoc:replyOf ?temp ;
+     snvoc:content ?content ;
+     snvoc:hasCreator ?person ;
+     snvoc:hasTag ?tag .
+  FILTER(!REGEX(?content, "idiot|loser")) .
+  FILTER NOT EXISTS { ?temp snvoc:hasTag ?t . ?m snvoc:hasTag ?t }
+};
+DEFINE MEASURE "Reply Count" AS COUNT(?message) WHERE (
+  ?message snvoc:hasTag ?tag
+) WITH "COUNT";
+CREATE CUBE "Unrelated Replies" FROM "Person ID", "Tag Name", "Location"
+WITH "Like Count", "Reply Count";
+USING CUBE "Unrelated Replies" OVER <${sparql.endpoint}>;
+SLICE("Location", "Country", dbpedia:Germany);
+COMPUTE("Like Count", "Reply Count")
+ORDER BY "Like Count" DESC, "Person ID" ASC, "Tag Name" ASC LIMIT 100;
+
+# Messages (Q12) ###############################################################
+
+USING CUBE "Messages" OVER <${sparql.endpoint}>;
+DICE("Creation Date", "Day" AS ?day, ?day > xsd:dateTime("2013-01-01"^^xsd:date));
+COMPUTE("Like Count")
+ORDER BY "Like Count" DESC, "Message ID" ASC LIMIT 100;
+
+# Stranger's Interaction (Q19) #################################################
+
+SELECT FACTS {
+  ?m snvoc:hasCreator ?person ;
+     snvoc:replyOf ?temp .
+  ?temp snvoc:hasCreator ?stranger .
+  FILTER (?person != ?stranger) .
+  FILTER NOT EXISTS {
+    ?person snvoc:knows [ snvoc:hasPerson ?stranger ]
+  } .
+  FILTER EXISTS {
+    [] snvoc:hasMember [ snvoc:hasPerson ?stranger ] ;
+       snvoc:hasTag/rdf:type dbpedia:Film
+  }
+  FILTER EXISTS {
+    [] snvoc:hasMember [ snvoc:hasPerson ?stranger ] ;
+       snvoc:hasTag/rdf:type dbpedia:Album
+  }
+};
+DEFINE DIMENSION "Birthday" FROM (?person snvoc:birthday ?birthday) WITH (
+  LEVEL "" AS ?birthday
+);
+DEFINE MEASURE "Strangers Count" AS COUNT(DISTINCT ?stranger)
+         WHERE (?temp snvoc:hasCreator ?stranger) WITH "SUM";
+CREATE CUBE "Stranger's Interaction" FROM "Person ID", "Birthday"
+WITH "Strangers Count", "Msg. Count";
+USING CUBE "Stranger's Interaction" OVER <${sparql.endpoint}>;
+DICE("Birthday", "" AS ?birthday, ?birthday > "1983-05-11"^^xsd:date);
+COMPUTE("Strangers Count", "Msg. Count")
+ORDER BY "Msg. Count" DESC, "Person ID" ASC LIMIT 100;
+
+# High Level Topics (Q20) ######################################################
+
+SELECT FACTS {
+  ?tagClass rdf:type snvoc:TagClass ;
+            rdfs:subClassOf ?root .
+  FILTER NOT EXISTS { ?root rdfs:subClassOf [] }
+};
+DEFINE DIMENSION "TagClass Name" FROM (?tagClass snvoc:name ?name) WITH (
+  LEVEL "" AS ?name
+);
+DEFINE MEASURE "Post Count" AS COUNT(DISTINCT ?post) WHERE (
+  ?post snvoc:hasTag/rdf:type/rdfs:subClassOf* ?tagClass .
+) WITH "SUM";
+CREATE CUBE "High Level Topics" FROM "TagClass Name" WITH "Post Count";
+USING CUBE "High Level Topics" OVER <${sparql.endpoint}>;
+COMPUTE("Post Count")
+ORDER BY "Post Count" DESC, "TagClass Name" ASC LIMIT 100;
+
+# Holiday Destinations (Q23) ###################################################
+
+SELECT FACTS {
+  ?m snvoc:hasCreator/snvoc:isLocatedIn/snvoc:isPartOf <${country}>
+};
+DEFINE DIMENSION "Message Location" FROM (
+  ?m       snvoc:isLocatedIn ?country .
+  ?country snvoc:isPartOf ?continent
+) WITH (
+  LEVEL "Country" AS ?country,
+  LEVEL "Continent" AS ?continent
+);
+CREATE CUBE "Holiday Destinations" FROM "Creation Day/Month/Year", "Message Location"
+WITH "Msg. Count";
+USING CUBE "Holiday Destinations" OVER <${sparql.endpoint}>;
+DICE("Message Location", "Country" AS ?country, ?country != dbpedia:Germany);
+ROLLUP("Creation Day/Month/Year", 1); # Month
+COMPUTE("Msg. Count")
+ORDER BY "Msg. Count" DESC, "Message Location" ASC, "Creation Day/Month/Year" ASC
+LIMIT 100;
+
+# Messages by Topic and Continent (Q24) ########################################
+
+SELECT FACTS { # should use entailment
+  { {?m rdf:type snvoc:Post} UNION {?m rdf:type snvoc:Comment} }
+  ?m snvoc:hasTag/rdf:type dbpedia:Company
+};
+CREATE CUBE "Messages by Topic and Continent"
+FROM "Message Location", "Creation Day/Month/Year"
+WITH "Msg. Count", "Like Count";
+USING CUBE "Messages by Topic and Continent" OVER <${sparql.endpoint}>;
+ROLLUP("Message Location", 1); # Continent
+ROLLUP("Creation Day/Month/Year", 1); # Month
+COMPUTE("Msg. Count", "Like Count")
+ORDER BY "Creation Day/Month/Year" ASC, "Message Location" DESC LIMIT 100;

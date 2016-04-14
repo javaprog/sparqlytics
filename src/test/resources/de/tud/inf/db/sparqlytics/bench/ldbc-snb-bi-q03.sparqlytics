@@ -1,0 +1,13 @@
+USING REPOSITORY "ldbc";
+USING CUBE "Messages & Tags" OVER <${sparql.endpoint}>;
+DICE("Creation Date", "Month" AS ?month, ?month IN ("${year}-${month}",
+     IF(${month} = 12, CONCAT(STR(${year} + 1), "-${month}"),
+                       CONCAT("${year}-", STR(${month} + 1)))));
+ROLLUP("Creation Date", 1);           # Month
+ROLLUP("Creation Day/Month/Year", 3); # ALL
+ROLLUP("Location", 1);                # ALL
+ROLLUP("Gender", 1);                  # ALL
+ROLLUP("Age Group", 1);               # ALL
+COMPUTE("Msg. Count")
+ORDER BY "Tag Name" ASC;
+# missing: difference between first and second month

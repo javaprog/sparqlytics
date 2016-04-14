@@ -19,9 +19,9 @@ package de.tud.inf.db.sparqlytics.olap;
 import de.tud.inf.db.sparqlytics.model.Session;
 import de.tud.inf.db.sparqlytics.model.Dimension;
 import de.tud.inf.db.sparqlytics.model.Filter;
-import com.hp.hpl.jena.sparql.core.Var;
-import com.hp.hpl.jena.sparql.core.VarAlloc;
-import com.hp.hpl.jena.sparql.engine.binding.BindingFactory;
+import org.apache.jena.sparql.core.Var;
+import org.apache.jena.sparql.core.VarAlloc;
+import org.apache.jena.sparql.engine.binding.BindingFactory;
 
 /**
  * A dice operation applies filter constraints to values of facts in a dimension.

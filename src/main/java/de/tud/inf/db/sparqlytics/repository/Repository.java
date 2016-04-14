@@ -16,6 +16,7 @@
 
 package de.tud.inf.db.sparqlytics.repository;
 
+import com.codahale.metrics.MetricRegistry;
 import de.tud.inf.db.sparqlytics.model.Cube;
 import de.tud.inf.db.sparqlytics.model.Dimension;
 import de.tud.inf.db.sparqlytics.model.Measure;
@@ -78,4 +79,27 @@ public interface Repository {
      *                                  measure with the given name
      */
     Measure findMeasure(String name) throws NoSuchElementException;
+    
+    /**
+     * Returns statistics about this repository. They include the following
+     * gauges:
+     * <ul>
+     *   <li>number of cubes,</li>
+     *   <li>number of dimensions, and</li>
+     *   <li>number of measures.</li>
+     * </ul>
+     * Furthermore, they include the following histograms:
+     * <ul>
+     *   <li>number of dimensions per cube,</li>
+     *   <li>number of levels per dimension (without {@literal "ALL"}),</li>
+     *   <li>number of measures per cube,</li>
+     *   <li>number of cubes per dimension, and</li>
+     *   <li>number of cubes per measure.</li>
+     * </ul>
+     * The statistics are a snapshot, they are not updates as the repository is
+     * modified.
+     * 
+     * @return statistics about this repository
+     */
+    MetricRegistry getStatistics();
 }

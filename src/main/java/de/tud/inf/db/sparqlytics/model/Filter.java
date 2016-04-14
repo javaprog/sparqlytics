@@ -16,8 +16,8 @@
 
 package de.tud.inf.db.sparqlytics.model;
 
-import com.hp.hpl.jena.sparql.core.Var;
-import com.hp.hpl.jena.sparql.expr.Expr;
+import org.apache.jena.sparql.core.Var;
+import org.apache.jena.sparql.expr.Expr;
 
 /**
  * Represents a filter for facts that is based on the level member.

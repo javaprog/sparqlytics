@@ -16,8 +16,8 @@
 
 package de.tud.inf.db.sparqlytics.model;
 
-import com.hp.hpl.jena.sparql.expr.Expr;
-import com.hp.hpl.jena.sparql.expr.NodeValue;
+import org.apache.jena.sparql.expr.Expr;
+import org.apache.jena.sparql.expr.NodeValue;
 
 /**
  * Represents a level in a dimension.

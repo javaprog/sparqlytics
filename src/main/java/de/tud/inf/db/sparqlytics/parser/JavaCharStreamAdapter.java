@@ -28,7 +28,7 @@ import java.io.UnsupportedEncodingException;
  * @author Michael Rudolf
  */
 public class JavaCharStreamAdapter 
-        extends com.hp.hpl.jena.sparql.lang.sparql_11.JavaCharStream {
+        extends org.apache.jena.sparql.lang.sparql_11.JavaCharStream {
     /**
      * The Java character stream to adapt.
      */

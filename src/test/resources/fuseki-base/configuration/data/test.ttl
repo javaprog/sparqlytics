@@ -1,0 +1,57 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix snvoc: <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/> .
+@prefix sn: <http://www.ldbc.eu/ldbc_socialnet/1.0/data/> .
+@prefix dbpedia: <http://dbpedia.org/resource/> .
+
+sn:alice
+    rdf:type snvoc:Person ;
+    snvoc:birthday "1986-06-29"^^xsd:date;
+    snvoc:speaks "it" ;
+    snvoc:speaks "en" ;
+    snvoc:speaks "fr" ;
+    snvoc:isLocatedIn <http://dbpedia.org/resource/Florence> .
+
+sn:bob
+    rdf:type snvoc:Person ;
+    snvoc:birthday "1983-05-11"^^xsd:date;
+    snvoc:speaks "en" ;
+    snvoc:speaks "es" ;
+    snvoc:isLocatedIn <http://dbpedia.org/resource/San_Diego> .
+
+sn:charles
+    rdf:type snvoc:Person ;
+    snvoc:birthday "1961-10-17"^^xsd:date;
+    snvoc:speaks "en" ;
+    snvoc:isLocatedIn <http://dbpedia.org/resource/New_York> .
+
+sn:comment1
+    rdf:type snvoc:Comment ;
+    snvoc:hasCreator sn:alice ;
+    snvoc:length 42 .
+
+sn:comment2
+    rdf:type snvoc:Comment ;
+    snvoc:hasCreator sn:alice ;
+    snvoc:length 23 .
+
+sn:comment3
+    rdf:type snvoc:Comment ;
+    snvoc:hasCreator sn:bob ;
+    snvoc:length 247 .
+
+sn:comment4
+    rdf:type snvoc:Comment ;
+    snvoc:hasCreator sn:charles ;
+    snvoc:length 7 .
+
+sn:comment5
+    rdf:type snvoc:Comment ;
+    snvoc:hasCreator sn:charles ;
+    snvoc:length 18 .
+
+<http://dbpedia.org/resource/Florence> snvoc:isPartOf <http://dbpedia.org/resource/Italy> .
+<http://dbpedia.org/resource/Italy> snvoc:isPartOf <http://dbpedia.org/resource/Europe> .
+<http://dbpedia.org/resource/San_Diego> snvoc:isPartOf <http://dbpedia.org/resource/USA> .
+<http://dbpedia.org/resource/New_York> snvoc:isPartOf <http://dbpedia.org/resource/USA> .
+<http://dbpedia.org/resource/USA> snvoc:isPartOf <http://dbpedia.org/resource/North_America> .

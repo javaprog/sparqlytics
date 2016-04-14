@@ -16,12 +16,12 @@
 
 package de.tud.inf.db.sparqlytics.parser;
 
-import com.hp.hpl.jena.sparql.syntax.Element;
 import de.tud.inf.db.sparqlytics.model.Cube;
 import de.tud.inf.db.sparqlytics.model.Dimension;
 import de.tud.inf.db.sparqlytics.model.Measure;
 import java.util.HashSet;
 import java.util.Set;
+import org.apache.jena.sparql.syntax.Element;
 
 /**
  * Helper class for composing cubes.
@@ -29,11 +29,6 @@ import java.util.Set;
  * @author Michael Rudolf
  */
 public class CubeBuilder {
-    /**
-     * The name to use for the cube.
-     */
-    private final String name;
-
     /**
      * The pattern to use for selecting facts.
      */
@@ -52,15 +47,13 @@ public class CubeBuilder {
     /**
      * Creates a new cube builder for the given fact selection pattern.
      *
-     * @param name          the name to use for the cube
      * @param factPattern   the pattern to use for selecting facts
      * @throws NullPointerException if the argument is {@code null}
      */
-    public CubeBuilder(final String name, final Element factPattern) {
-        if (name == null || factPattern == null) {
+    public CubeBuilder(final Element factPattern) {
+        if (factPattern == null) {
             throw new NullPointerException();
         }
-        this.name = name;
         this.factPattern = factPattern;
     }
 
@@ -101,13 +94,21 @@ public class CubeBuilder {
      * Creates a new cube from the configured fact selection pattern and the
      * dimensions and measures previously added.
      *
+     * @param name the name to use for the cube
      * @return a new cube
+     * @throws NullPointerException if the argument is {@code null}
      * @throws IllegalStateException    if no dimensions or measures have been
      *                                  added
      */
-    public Cube build() {
-        if (dimensions.isEmpty() || measures.isEmpty()) {
-            throw new IllegalStateException();
+    public Cube build(final String name) {
+        if (name == null) {
+            throw new NullPointerException("No cube name provided");
+        } else if (dimensions.isEmpty()) {
+            throw new IllegalStateException("No dimensions provided for cube \"" +
+                    name + "\"");
+        } else if (measures.isEmpty()) {
+            throw new IllegalStateException("No measures provided for cube \"" +
+                    name + "\"");
         }
         return new Cube(name, factPattern, dimensions, measures);
     }

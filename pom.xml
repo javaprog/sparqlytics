@@ -6,7 +6,7 @@
     <groupId>de.tu-dresden.inf.db</groupId>
     <artifactId>sparqlytics</artifactId>
     <packaging>jar</packaging>
-    <version>0.2</version>
+    <version>0.3</version>
 
     <!-- project metadata -->
     <name>SPARQLytics</name>
@@ -42,13 +42,13 @@
         <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>apache-jena-libs</artifactId>
-            <version>2.11.1</version>
+            <version>3.0.1</version>
             <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
-            <version>4.0</version>
+            <version>4.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -72,10 +72,25 @@
             <version>2.4</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>tyrex</groupId>
+            <artifactId>tyrex</artifactId>
+            <version>1.0.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <!-- build process configuration -->
     <build>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+                <excludes>
+                    <exclude>fuseki-base</exclude>
+                </excludes>
+            </testResource>
+        </testResources>
         <plugins>
             <plugin>
                 <artifactId>maven-enforcer-plugin</artifactId>
@@ -88,7 +103,7 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <version>[1.7,)</version>
+                                    <version>[1.8,)</version>
                                 </requireJavaVersion>
                                 <requireMavenVersion>
                                     <version>[2.2.1,)</version>
@@ -158,7 +173,8 @@
                     <version>2.0.2</version>
                     <configuration>
                         <source>1.7</source>
-                        <target>1.7</target>
+                        <target>1.8</target>
+                        <showDeprecation>true</showDeprecation>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -183,7 +199,7 @@
     <!-- project properties -->
     <properties>
         <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>iso-8859-15</project.build.sourceEncoding>
         <project.reporting.outputEncoding>iso-8859-15</project.reporting.outputEncoding>
     </properties>
@@ -197,40 +213,90 @@
             <dependencies>
                 <dependency>
                     <groupId>org.apache.jena</groupId>
-                    <artifactId>jena-fuseki</artifactId>
-                    <version>1.0.1</version>
+                    <artifactId>jena-fuseki-war</artifactId>
+                    <version>2.3.1</version>
+                    <type>war</type>
                     <scope>test</scope>
                 </dependency>
             </dependencies>
+            <properties>
+                <fuseki.base>${project.build.directory}/fuseki-base</fuseki.base>
+            </properties>
             <build>
+                <testResources>
+                    <testResource>
+                        <directory>src/test/resources/fuseki-base</directory>
+                        <targetPath>${fuseki.base}</targetPath>
+                    </testResource>
+                    <testResource>
+                        <directory>src/test/resources</directory>
+                        <includes>
+                            <include>log4j.properties</include>
+                        </includes>
+                        <targetPath>${fuseki.base}</targetPath>
+                    </testResource>
+                </testResources>
                 <plugins>
                     <plugin>
-                        <groupId>org.codehaus.groovy.maven</groupId>
-                        <artifactId>gmaven-plugin</artifactId>
-                        <version>1.0</version>
+                        <groupId>org.codehaus.cargo</groupId>
+                        <artifactId>cargo-maven2-plugin</artifactId>
+                        <version>1.4.19</version>
+                        <configuration>
+                            <container>
+                                <containerId>tomcat8x</containerId>
+                                <type>embedded</type>
+                                <systemProperties>
+                                    <FUSEKI_BASE>${fuseki.base}</FUSEKI_BASE>
+                                </systemProperties>
+                            </container>
+                            <configuration>
+                                <properties>
+                                    <cargo.servlet.uriencoding>UTF-8</cargo.servlet.uriencoding>
+                                    <cargo.jvmargs>-Xmx128m</cargo.jvmargs>
+                                    <cargo.logging>low</cargo.logging>
+                                    <cargo.servlet.port>${dynamic.test.port}</cargo.servlet.port>
+                                </properties>
+                            </configuration>
+                            <deployables>
+                                <deployable>
+                                    <groupId>org.apache.jena</groupId>
+                                    <artifactId>jena-fuseki-war</artifactId>
+                                    <type>war</type>
+                                </deployable>
+                            </deployables>
+                        </configuration>
                         <executions>
                             <execution>
+                                <id>start</id>
                                 <phase>pre-integration-test</phase>
                                 <goals>
-                                    <goal>execute</goal>
+                                    <goal>start</goal>
                                 </goals>
-                                <configuration>
-                                    <source>
-                                        import org.apache.jena.fuseki.Fuseki
-                                        import org.apache.jena.fuseki.server.FusekiConfig
-                                        import org.apache.jena.fuseki.server.SPARQLServer
-                                        import org.apache.jena.riot.RDFDataMgr
-
-                                        def datasetGraph = RDFDataMgr.loadDatasetGraph(
-                                                project.build.testOutputDirectory + "/de/tud/inf/db/sparqlytics/test.ttl")
-                                        def config = FusekiConfig.defaultConfiguration("/ds", datasetGraph, true, true)
-                                        config.pages = null
-                                        def server = new SPARQLServer(config)
-                                        server.start()
-                                        Fuseki.setServer(server)
-                                    </source>
-                                    <classpathScope>test</classpathScope>
-                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>stop</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>1.10</version>
+                        <configuration>
+                            <portNames>
+                                <portName>dynamic.test.port</portName>
+                            </portNames>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <phase>process-test-sources</phase>
+                                <goals>
+                                    <goal>reserve-network-port</goal>
+                                </goals>
                             </execution>
                         </executions>
                     </plugin>
@@ -245,6 +311,9 @@
                                 </goals>
                                 <configuration>
                                     <argLine>-Dfile.encoding=${project.reporting.outputEncoding}</argLine>
+                                    <systemPropertyVariables>
+                                        <dynamic.test.port>${dynamic.test.port}</dynamic.test.port>
+                                    </systemPropertyVariables>
                                 </configuration>
                             </execution>
                         </executions>
@@ -296,6 +365,10 @@
                                         <include>**/*Benchmark.java</include>
                                     </includes>
                                     <printSummary>false</printSummary>
+                                    <systemProperties>
+                                        <java.naming.factory.initial>tyrex.naming.MemoryContextFactory</java.naming.factory.initial>
+                                        <java.naming.provider.url>/</java.naming.provider.url>
+                                    </systemProperties>
                                     <systemPropertyVariables>
                                         <sparql.endpoint>${sparql.endpoint}</sparql.endpoint>
                                     </systemPropertyVariables>

@@ -1,0 +1,25 @@
+USING REPOSITORY "ldbc";
+PREFIX snvoc:   <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>
+SELECT FACTS {
+  {
+    SELECT ?forum WHERE {
+      ?forum  snvoc:hasMember [ snvoc:hasPerson ?person ] .
+      ?person snvoc:isLocatedIn/snvoc:isPartOf <${country}>
+    }
+    GROUP BY ?forum ORDER BY DESC(COUNT(*)) LIMIT 100
+  }
+  ?forum snvoc:hasMember [ snvoc:hasPerson ?person ]
+};
+
+DEFINE MEASURE "Person Post Count" AS COUNT(?post) WHERE (
+  ?forum snvoc:containerOf ?post .
+  ?post  snvoc:hasCreator ?person
+) WITH "SUM";
+
+CREATE CUBE "Top Posters in Country" FROM "Person ID", "First Name", "Last Name"
+WITH "Person Post Count";
+
+USING CUBE "Top Posters in Country" OVER <${sparql.endpoint}>;
+COMPUTE("Person Post Count")
+ORDER BY "Person Post Count" DESC, "Person ID" ASC
+LIMIT 100;

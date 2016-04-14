@@ -16,17 +16,16 @@
 
 package de.tud.inf.db.sparqlytics;
 
-import arq.cmd.CmdException;
-import arq.cmd.TerminationException;
-import arq.cmdline.ArgDecl;
-import arq.cmdline.CmdGeneral;
 import com.codahale.metrics.MetricRegistry;
 import de.tud.inf.db.sparqlytics.parser.ParseException;
 import de.tud.inf.db.sparqlytics.parser.SPARQLyticsParser;
 import de.tud.inf.db.sparqlytics.parser.TokenMgrError;
 import java.io.*;
-import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.RDFLanguages;
+import jena.cmd.CmdException;
+import jena.cmd.TerminationException;
+import jena.cmd.ArgDecl;
+import jena.cmd.CmdGeneral;
+import org.apache.jena.sparql.resultset.ResultsFormat;
 
 /**
  * The application's main class.
@@ -62,7 +61,7 @@ public class Main extends CmdGeneral {
     private Reader input;
     private boolean interactive;
     private File output;
-    private Lang outputFormat;
+    private ResultsFormat resultsFormat;
 
     /**
      * Creates a new instance for processing the given command line arguments.
@@ -108,13 +107,13 @@ public class Main extends CmdGeneral {
             if (output.isFile() && !output.canWrite()) {
                 throw new CmdException("The output file cannot be written to");
             } else if (!output.isDirectory()) {
-                outputFormat = RDFLanguages.filenameToLang(output.getName());
+                resultsFormat = ResultsFormat.guessSyntax(output.getName());
             }
         }
         if (hasArg(outputFormatDecl)) {
             String temp = getValue(outputFormatDecl);
-            outputFormat = RDFLanguages.shortnameToLang(temp);
-            if (outputFormat == null) {
+            resultsFormat = ResultsFormat.lookup(temp);
+            if (resultsFormat == null) {
                 throw new CmdException("Unsupported output format: " + temp);
             }
         }
@@ -126,7 +125,7 @@ public class Main extends CmdGeneral {
         SPARQLyticsParser parser = new SPARQLyticsParser(input);
         parser.setInteractive(interactive);
         parser.getSession().setSink(output);
-        parser.getSession().setOutputFormat(outputFormat);
+        parser.getSession().setResultsFormat(resultsFormat);
         if (interactive) {
             //Interactive mode
             try {
@@ -148,8 +147,8 @@ public class Main extends CmdGeneral {
             //Batch mode
             try {
                 parser.Start();
-            } catch (ParseException | TokenMgrError | RuntimeException ex) {
-                System.err.println(ex.getLocalizedMessage());
+            } catch (Exception | TokenMgrError ex) {
+                ex.printStackTrace(System.err);
                 throw (TerminationException)
                         new TerminationException(1).initCause(ex);
             }

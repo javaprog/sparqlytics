@@ -1,0 +1,304 @@
+PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX snvoc:   <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>
+PREFIX dbpedia: <http://dbpedia.org/resource/>
+PREFIX xsd:     <http://www.w3.org/2001/XMLSchema#>
+
+# Messages (Q01, Q12) ##########################################################
+
+SELECT FACTS { # should use entailment
+  { {?m rdf:type snvoc:Post} UNION {?m rdf:type snvoc:Comment} }
+  ?m snvoc:hasCreator ?person
+};
+
+DEFINE DIMENSION "Creation Date" FROM (?m snvoc:creationDate ?creationDate) WITH (
+  LEVEL "Day" AS CONCAT(xsd:string(DAY(xsd:dateTime(?creationDate))), "-",
+                        xsd:string(MONTH(xsd:dateTime(?creationDate))), "-",
+                        xsd:string(YEAR(xsd:dateTime(?creationDate)))),
+  LEVEL "Month" AS CONCAT(xsd:string(MONTH(xsd:dateTime(?creationDate))), "-",
+                          xsd:string(YEAR(xsd:dateTime(?creationDate)))),
+  LEVEL "Year" AS YEAR(xsd:dateTime(?creationDate))
+);
+
+DEFINE DIMENSION "Message ID" FROM (?m snvoc:id ?messageID) WITH (
+  LEVEL "" AS ?messageID
+);
+
+DEFINE DIMENSION "Message Type" FROM (?m rdf:type ?t) WITH (
+  LEVEL "" AS SUBSTR(xsd:string(?t), 40)
+);
+
+DEFINE DIMENSION "Length Class" FROM (?m snvoc:length ?length) WITH (
+  LEVEL "" AS IF(?length < 40, "short",
+              IF(?length < 80, "one liner",
+              IF(?length < 160, "tweet", "long")))
+);
+
+DEFINE DIMENSION "Person ID" FROM (?person snvoc:id ?personID) WITH (
+  LEVEL "" AS ?personID
+);
+
+DEFINE DIMENSION "First Name" FROM (?person snvoc:firstName ?firstName) WITH (
+  LEVEL "" AS ?firstName
+);
+
+DEFINE DIMENSION "Last Name" FROM (?person snvoc:lastName ?lastName) WITH (
+  LEVEL "" AS ?lastName
+);
+
+DEFINE MEASURE "Avg. Msg. Length" AS ?length
+         WHERE (?m snvoc:length ?length) WITH "AVG";
+
+DEFINE MEASURE "Sum Msg. Length" AS ?length
+         WHERE (?m snvoc:length ?length) WITH "SUM";
+
+DEFINE MEASURE "Msg. Count" AS ?m  # triple pattern unneeded
+         WHERE (?m snvoc:hasCreator ?person) WITH "COUNT";
+
+# missing: percentage of total messages created in diced cube
+
+DEFINE MEASURE "Like Count" AS COUNT(?like) WHERE (
+  ?like snvoc:hasComment|snvoc:hasPost ?m
+) WITH "COUNT";
+
+CREATE CUBE "Messages"
+FROM "Creation Date", "Message ID", "Message Type", "Length Class", "Person ID",
+     "First Name", "Last Name"
+WITH "Msg. Count", "Avg. Msg. Length", "Sum Msg. Length", "Like Count";
+
+
+# Messages & Tags (Q02, Q03) ###################################################
+
+SELECT FACTS { # should use entailment
+  { {?m rdf:type snvoc:Post} UNION {?m rdf:type snvoc:Comment} }
+  ?m snvoc:hasCreator ?person .
+  ?m snvoc:hasTag ?tag
+};
+
+DEFINE DIMENSION "Location" FROM (
+  ?person  snvoc:isLocatedIn ?city .
+  ?city    snvoc:isPartOf ?country .
+  ?country snvoc:isPartOf ?continent
+) WITH (
+  LEVEL "City" AS ?city,
+  LEVEL "Country" AS ?country,
+  LEVEL "Continent" AS ?continent
+);
+
+DEFINE DIMENSION "Creation Day/Month/Year" FROM (?m snvoc:creationDate ?creationDate) WITH (
+  LEVEL "Day" AS DAY(xsd:dateTime(?creationDate)),
+  LEVEL "Month" AS MONTH(xsd:dateTime(?creationDate)),
+  LEVEL "Year" AS YEAR(xsd:dateTime(?creationDate))
+);
+
+DEFINE DIMENSION "Gender" FROM (?person snvoc:gender ?gender) WITH (
+  LEVEL "" AS ?gender
+);
+
+DEFINE DIMENSION "Age Group" FROM (?person snvoc:birthday ?birthday) WITH (
+  LEVEL "" AS FLOOR((2013 - YEAR(?birthday))/5)
+);
+
+DEFINE DIMENSION "Tag Name" FROM (?tag snvoc:name ?name) WITH (
+  LEVEL "" AS ?name
+);
+
+CREATE CUBE "Messages & Tags"
+FROM "Location", "Creation Date", "Creation Day/Month/Year", "Gender", "Age Group", "Tag Name"
+WITH "Msg. Count";
+
+
+# Forums, Posts & Tag Classes (Q04) ############################################
+
+SELECT FACTS {
+  ?forum snvoc:containerOf ?post
+};
+
+DEFINE DIMENSION "Forum" FROM (?forum snvoc:containerOf ?post) WITH (
+  LEVEL "" AS ?forum
+);
+
+DEFINE DIMENSION "Post" FROM (?forum snvoc:containerOf ?post) WITH (
+  LEVEL "" AS ?post
+);
+
+DEFINE DIMENSION "Tag Class" FROM (
+  ?forum snvoc:containerOf ?post .
+  ?post  snvoc:hasTag ?tag .
+  ?tag   rdf:type ?class
+) WITH (
+  LEVEL "" AS ?class
+);
+
+DEFINE DIMENSION "Forum Creation Date" FROM (?forum snvoc:creationDate ?date) WITH (
+  LEVEL "" AS ?date
+);
+
+DEFINE DIMENSION "Forum Title" FROM (?forum snvoc:title ?title) WITH (
+  LEVEL "" AS ?title
+);
+
+DEFINE DIMENSION "Forum ID" FROM (?forum snvoc:id ?forumID) WITH (
+  LEVEL "" AS ?forumID
+);
+
+DEFINE DIMENSION "Moderator Location" FROM (
+  ?forum   snvoc:hasModerator ?person .
+  ?person  snvoc:isLocatedIn ?city .
+  ?city    snvoc:isPartOf ?country .
+  ?country snvoc:isPartOf ?continent
+) WITH (
+  LEVEL "City" AS ?city,
+  LEVEL "Country" AS ?country,
+  LEVEL "Continent" AS ?continent
+);
+
+DEFINE DIMENSION "Moderator ID" FROM (
+  ?forum snvoc:hasModerator ?person .
+  ?person snvoc:id ?moderatorID
+) WITH (
+  LEVEL "" AS ?moderatorID
+);
+
+DEFINE MEASURE "Contained Post Count" AS ?post  # triple pattern unneeded
+         WHERE (?forum snvoc:containerOf ?post) WITH "COUNT";
+
+CREATE CUBE "Forums, Posts & Tag Classes"
+FROM "Forum", "Post", "Tag Class", "Forum Creation Date", "Forum Title",
+     "Forum ID", "Moderator Location", "Moderator ID"
+WITH "Contained Post Count";
+
+
+# Top Posters in Country (Q05) #################################################
+
+# not in repository but in query, because parameter in fact pattern is required
+
+
+# Active Posters (Q06) #########################################################
+
+# parameter for tag in fact pattern required
+
+#SELECT FACTS {
+#  ?m snvoc:hasTag dbpedia:Charles_Lindberg .
+#  ?m snvoc:hasCreator ?person .
+#};
+#
+#DEFINE MEASURE "Score" AS WHERE () WITH "SUM";
+#
+#CREATE CUBE "Active Posters" FROM "Person ID" WITH "Score";
+
+
+# Authoritative Users (Q07) ####################################################
+
+# parameter for tag in fact pattern required
+
+#SELECT FACTS {
+#  ?m snvoc:hasTag dbpedia:Charles_Lindberg .
+#  ?m snvoc:hasCreator ?person .
+#};
+#
+#DEFINE MEASURE "Authority Score" AS ?m WHERE () WITH "SUM";
+#
+#CREATE CUBE "Authoritative Users" FROM "Person ID" WITH "Authority Score";
+
+
+# Related Topics (Q08) #########################################################
+
+# not in repository but in query, because parameter in fact pattern is required
+
+
+# Forum with Related Tags (Q09) ################################################
+
+# parameter for tag class in measures is required
+
+
+# Central Person for a Tag (Q10) ###############################################
+
+# parameter in fact pattern is required
+
+
+# Unrelated Replies (Q11) ######################################################
+
+# not in repository but in query, because parameter in fact pattern is required
+
+
+# Popular Tags (Q13) ###########################################################
+
+# seems to require subqueries in measures
+
+
+# Top Thread Initiators (Q14) ##################################################
+
+# requires advanced property path mechanics
+
+
+# Social Normals (Q15) #########################################################
+
+# requires combining a cube with itself on different measures
+
+
+# Experts in Social Circle (Q16) ###############################################
+
+# not really multidimensional, merely a join
+
+
+# Friend Triangles (Q17) #######################################################
+
+# not multidimensional
+
+
+# How Many Persons Have a Given Number of Posts (Q18) ##########################
+
+# not multidimensional
+
+
+# Stranger's Interaction (Q19) #################################################
+
+# not in repository but in query, because parameter in fact pattern is required
+
+
+# High Level Topics (Q20) ######################################################
+
+SELECT FACTS {
+  ?tagClass rdf:type snvoc:TagClass ;
+            rdfs:subClassOf ?root .
+  FILTER NOT EXISTS { ?root rdfs:subClassOf [] }
+};
+
+DEFINE DIMENSION "TagClass Name" FROM (?tagClass snvoc:name ?name) WITH (
+  LEVEL "" AS ?name
+);
+
+DEFINE MEASURE "Post Count" AS COUNT(DISTINCT ?post) WHERE (
+  ?post snvoc:hasTag/rdf:type/rdfs:subClassOf* ?tagClass .
+) WITH "SUM";
+
+CREATE CUBE "High Level Topics" FROM "TagClass Name" WITH "Post Count";
+
+
+# Zombies in a Country (Q21) ###################################################
+
+# not really multidimensional, could be modeled by combining several cubes
+
+
+# International Dialog (Q22) ###################################################
+
+# not really multidimensional, could be modeled by combining several cubes
+
+
+# Holiday Destinations (Q23) ###################################################
+
+# not in repository but in query, because parameter in fact pattern is required
+
+DEFINE DIMENSION "Message Location" FROM (
+  ?m       snvoc:isLocatedIn ?country .
+  ?country snvoc:isPartOf ?continent
+) WITH (
+  LEVEL "Country" AS ?country,
+  LEVEL "Continent" AS ?continent
+);
+
+
+# Messages by Topic and Continent (Q24) ########################################
+
+# not in repository but in query, because parameter in fact pattern is required

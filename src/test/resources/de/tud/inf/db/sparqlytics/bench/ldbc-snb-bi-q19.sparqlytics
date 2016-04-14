@@ -1,0 +1,37 @@
+USING REPOSITORY "ldbc";
+PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX snvoc:   <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>
+PREFIX xsd:     <http://www.w3.org/2001/XMLSchema#>
+SELECT FACTS {
+  ?m snvoc:hasCreator ?person ;
+     snvoc:replyOf ?temp .
+  ?temp snvoc:hasCreator ?stranger .
+  FILTER (?person != ?stranger) .
+  FILTER NOT EXISTS {
+    ?person snvoc:knows [ snvoc:hasPerson ?stranger ]
+  } .
+  FILTER EXISTS {
+    [] snvoc:hasMember [ snvoc:hasPerson ?stranger ] ;
+       snvoc:hasTag/rdf:type <${tagClass1}>
+  }
+  FILTER EXISTS {
+    [] snvoc:hasMember [ snvoc:hasPerson ?stranger ] ;
+       snvoc:hasTag/rdf:type <${tagClass2}>
+  }
+};
+
+DEFINE DIMENSION "Birthday" FROM (?person snvoc:birthday ?birthday) WITH (
+  LEVEL "" AS ?birthday
+);
+
+DEFINE MEASURE "Strangers Count" AS COUNT(DISTINCT ?stranger)
+         WHERE (?temp snvoc:hasCreator ?stranger) WITH "SUM";
+
+CREATE CUBE "Stranger's Interaction" FROM "Person ID", "Birthday"
+WITH "Strangers Count", "Msg. Count";
+
+USING CUBE "Stranger's Interaction" OVER <${sparql.endpoint}>;
+DICE("Birthday", "" AS ?birthday, ?birthday > "${date}"^^xsd:date);
+COMPUTE("Strangers Count", "Msg. Count")
+ORDER BY "Msg. Count" DESC, "Person ID" ASC
+LIMIT 100;

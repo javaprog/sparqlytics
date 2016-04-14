@@ -22,16 +22,22 @@ options {
 PARSER_BEGIN(SPARQLyticsParser)
 package de.tud.inf.db.sparqlytics.parser;
 
-import com.hp.hpl.jena.sparql.core.Var;
-import com.hp.hpl.jena.sparql.expr.Expr;
-import com.hp.hpl.jena.sparql.lang.sparql_11.SPARQLParser11;
-import com.hp.hpl.jena.sparql.lang.sparql_11.SPARQLParser11TokenManager;
-import com.hp.hpl.jena.sparql.syntax.Element;
+import org.apache.jena.query.Query;
+import org.apache.jena.sparql.core.Var;
+import org.apache.jena.sparql.expr.Expr;
+import org.apache.jena.sparql.lang.sparql_11.SPARQLParser11;
+import org.apache.jena.sparql.lang.sparql_11.SPARQLParser11TokenManager;
+import org.apache.jena.sparql.syntax.Element;
 import de.tud.inf.db.sparqlytics.model.*;
 import de.tud.inf.db.sparqlytics.olap.*;
+import de.tud.inf.db.sparqlytics.repository.DefaultRepository;
+import de.tud.inf.db.sparqlytics.repository.MutableRepository;
+import de.tud.inf.db.sparqlytics.repository.Repository;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 
 /**
  * Parses SPARQLytics commands. 
@@ -45,6 +51,11 @@ public class SPARQLyticsParser {
     private final Session session = new Session();
 
     /**
+     * Maintains dimensions, measures and cubes.
+     */
+    private Repository repository = new DefaultRepository();
+
+    /**
      * Whether the parser is in interactive mode.
      */
     private boolean interactive;
@@ -54,6 +65,13 @@ public class SPARQLyticsParser {
      */
     public Session getSession() {
         return session;
+    }
+
+    /**
+     * Returns the repository maintaining dimensions, measures and cubes.
+     */
+    public Repository getRepository() {
+        return repository;
     }
 
     /**
@@ -108,15 +126,15 @@ public class SPARQLyticsParser {
 
             // maybe push back the last tokens, which the sparql parser will
             // have consumed to know that the query was finished
-            com.hp.hpl.jena.sparql.lang.sparql_11.Token token = parser.token;
+            org.apache.jena.sparql.lang.sparql_11.Token token = parser.token;
             while ((token = token.next) != null) {
                 jj_input_stream.backup(token.image == null ?
                     token.endColumn - token.beginColumn : token.image.length());
             }
-        } catch (com.hp.hpl.jena.sparql.lang.sparql_11.ParseException ex) {
+        } catch (org.apache.jena.sparql.lang.sparql_11.ParseException ex) {
             throw (ParseException) new ParseException(
                     ex.getLocalizedMessage()).initCause(ex);
-        } catch (com.hp.hpl.jena.sparql.lang.sparql_11.TokenMgrError ex) {
+        } catch (org.apache.jena.sparql.lang.sparql_11.TokenMgrError ex) {
             throw (TokenMgrError) new TokenMgrError(ex.getLocalizedMessage(),
                     TokenMgrError.LEXICAL_ERROR).initCause(ex);
         }
@@ -139,128 +157,128 @@ public class SPARQLyticsParser {
          *         if parsing fails on the given input
          */
         public T execute(SPARQLParser11 parser) 
-            throws com.hp.hpl.jena.sparql.lang.sparql_11.ParseException;
+            throws org.apache.jena.sparql.lang.sparql_11.ParseException;
     }
 
     /**
-     * Invokes the <code>&lt;ConditionalOrExpression&gt;</code> SPARQL grammar rule.
+     * Invokes the {@code <ConditionalOrExpression>} SPARQL grammar rule.
      */
     private static class ConditionalOrExpressionRule implements SPARQLRule<Expr> {
         @Override
         public Expr execute(final SPARQLParser11 parser)
-                throws com.hp.hpl.jena.sparql.lang.sparql_11.ParseException {
+                throws org.apache.jena.sparql.lang.sparql_11.ParseException {
             return parser.ConditionalOrExpression();
         }
     }
 
     /**
-     * Invokes the <code>&lt;DatasetClause&gt;</code> SPARQL grammar rule.
+     * Invokes the {@code <DatasetClause>} SPARQL grammar rule.
      */
     private static class DatasetClauseRule implements SPARQLRule<Void> {
         @Override
         public Void execute(final SPARQLParser11 parser)
-                throws com.hp.hpl.jena.sparql.lang.sparql_11.ParseException {
+                throws org.apache.jena.sparql.lang.sparql_11.ParseException {
             parser.DatasetClause();
             return null;
         }
     }
 
     /**
-     * Invokes the <code>&lt;GroupGraphPattern&gt;</code> SPARQL grammar rule.
+     * Invokes the {@code <GroupGraphPattern>} SPARQL grammar rule.
      */
     private static class GroupGraphPatternRule implements SPARQLRule<Element> {
         @Override
         public Element execute(final SPARQLParser11 parser)
-                throws com.hp.hpl.jena.sparql.lang.sparql_11.ParseException {
+                throws org.apache.jena.sparql.lang.sparql_11.ParseException {
             return parser.GroupGraphPattern();
         }
     }
 
     /**
-     * Invokes the <code>&lt;Integer&gt;</code> SPARQL grammar rule.
+     * Invokes the {@code <Integer>} SPARQL grammar rule.
      */
     private static class IntegerRule implements SPARQLRule<Long> {
         @Override
         public Long execute(final SPARQLParser11 parser)
-                throws com.hp.hpl.jena.sparql.lang.sparql_11.ParseException {
+                throws org.apache.jena.sparql.lang.sparql_11.ParseException {
             return parser.Integer();
         }
     }
 
     /**
-     * Invokes the <code>&lt;IRIREF&gt;</code> SPARQL grammar rule.
+     * Invokes the {@code <IRIREF>} SPARQL grammar rule.
      */
     private static class IRIREFRule implements SPARQLRule<String> {
         @Override
         public String execute(final SPARQLParser11 parser)
-                throws com.hp.hpl.jena.sparql.lang.sparql_11.ParseException {
+                throws org.apache.jena.sparql.lang.sparql_11.ParseException {
             return parser.IRIREF();
         }
     }
 
     /**
-     * Invokes the <code>&lt;NumericExpression&gt;</code> SPARQL grammar rule.
+     * Invokes the {@code <NumericExpression>} SPARQL grammar rule.
      */
     private static class NumericExpressionRule implements SPARQLRule<Expr> {
         @Override
         public Expr execute(final SPARQLParser11 parser)
-                throws com.hp.hpl.jena.sparql.lang.sparql_11.ParseException {
+                throws org.apache.jena.sparql.lang.sparql_11.ParseException {
             return parser.NumericExpression();
         }
     }
 
     /**
-     * Invokes the <code>&lt;PrimaryExpression&gt;</code> SPARQL grammar rule.
+     * Invokes the {@code <PrimaryExpression>} SPARQL grammar rule.
      */
     private static class PrimaryExpressionRule implements SPARQLRule<Expr> {
         @Override
         public Expr execute(final SPARQLParser11 parser)
-                throws com.hp.hpl.jena.sparql.lang.sparql_11.ParseException {
+                throws org.apache.jena.sparql.lang.sparql_11.ParseException {
             return parser.PrimaryExpression();
         }
     }
 
     /**
-     * Invokes the <code>&lt;Prologue&gt;</code> SPARQL grammar rule.
+     * Invokes the {@code <Prologue>} SPARQL grammar rule.
      */
     private static class PrologueRule implements SPARQLRule<Void> {
         @Override
         public Void execute(final SPARQLParser11 parser)
-                throws com.hp.hpl.jena.sparql.lang.sparql_11.ParseException {
+                throws org.apache.jena.sparql.lang.sparql_11.ParseException {
             parser.Prologue();
             return null;
         }
     }
 
     /**
-     * Invokes the <code>&lt;String&gt;</code> SPARQL grammar rule.
+     * Invokes the {@code <String>} SPARQL grammar rule.
      */
     private static class StringRule implements SPARQLRule<String> {
         @Override
         public String execute(final SPARQLParser11 parser)
-                throws com.hp.hpl.jena.sparql.lang.sparql_11.ParseException {
+                throws org.apache.jena.sparql.lang.sparql_11.ParseException {
             return parser.String();
         }
     }
 
     /**
-     * Invokes the <code>&lt;TriplesBlock&gt;</code> SPARQL grammar rule.
+     * Invokes the {@code <TriplesBlock>} SPARQL grammar rule.
      */
     private static class TriplesBlockRule implements SPARQLRule<Element> {
         @Override
         public Element execute(final SPARQLParser11 parser)
-                throws com.hp.hpl.jena.sparql.lang.sparql_11.ParseException {
+                throws org.apache.jena.sparql.lang.sparql_11.ParseException {
             return parser.TriplesBlock(null);
         }
     }
 
     /**
-     * Invokes the <code>&lt;Var&gt;</code> SPARQL grammar rule.
+     * Invokes the {@code <Var>} SPARQL grammar rule.
      */
     private static class VarRule implements SPARQLRule<Var> {
         @Override
         public Var execute(final SPARQLParser11 parser)
-                throws com.hp.hpl.jena.sparql.lang.sparql_11.ParseException {
+                throws org.apache.jena.sparql.lang.sparql_11.ParseException {
             return parser.Var();
         }
     }
@@ -279,7 +297,11 @@ SKIP :
 
 TOKEN :
 {
-    < SELECT: "SELECT" >
+    < USING: "USING" >
+  | < REPOSITORY: "REPOSITORY">
+  | < BASE: "BASE">
+  | < PREFIX: "PREFIX">
+  | < SELECT: "SELECT" >
   | < FACTS: "FACTS" >
   | < DEFINE: "DEFINE" >
   | < DIMENSION: "DIMENSION" >
@@ -292,6 +314,7 @@ TOKEN :
   | < CREATE: "CREATE" >
   | < CUBE: "CUBE" >
   | < OVER: "OVER" >
+  | < DELETE: "DELETE" >
   | < SLICE: "SLICE" >
   | < DICE: "DICE" >
   | < RESET: "RESET" >
@@ -299,6 +322,13 @@ TOKEN :
   | < ROLLUP: "ROLLUP" >
   | < DRILLDOWN: "DRILLDOWN" >
   | < COMPUTE: "COMPUTE" >
+  | < STAR: "*" >
+  | < ORDER: "ORDER" >
+  | < BY: "BY" >
+  | < ASC: "ASC" >
+  | < DESC: "DESC" >
+  | < LIMIT: "LIMIT" >
+  | < OFFSET: "OFFSET" >
   | < EXIT: "EXIT" >
   | < LPAREN: "(" >
   | < RPAREN: ")" >
@@ -306,11 +336,39 @@ TOKEN :
   | < SEMI: ";" >
 }
 
-/* Parser grammar rules */
-void Start() : {}
+SPECIAL_TOKEN :
 {
-  CubeDefinition()
-  (OLAPOperation())*
+   < SINGLE_LINE_COMMENT: "#" (~["\n", "\r"])* ("\n" | "\r" | "\r\n")? >
+}
+
+/* Parser grammar rules */
+void Start() throws NamingException : {}
+{
+  (RepositorySelection())?
+  Prologue()
+  (DDL() | CubeDefinition() | CubeSelection() | OLAPOperation())*
+}
+
+void RepositorySelection() throws NamingException :
+{
+  String name;
+}
+{
+  try {
+    <USING> <REPOSITORY> name = String() <SEMI>
+    { repository = (Repository) new InitialContext().lookup(name); }
+  } catch (NamingException ex) {
+    if (!interactive) {
+      throw ex;
+    }
+    System.err.println(ex.getMessage());
+  }
+}
+
+void DDL() : {}
+{
+    (<DEFINE> (DefineDimension() | DefineMeasure()))
+  | (<DELETE> (DropDimension() | DropMeasure() | DropCube()))
 }
 
 void CubeDefinition() :
@@ -318,11 +376,9 @@ void CubeDefinition() :
   CubeBuilder cubeBuilder;
 }
 {
-  Prologue()
-  DatasetClause()
-  cubeBuilder = FactSelection()
-  (<DEFINE> (DefineDimension(cubeBuilder) | DefineMeasure(cubeBuilder)))+
-  CreateCube(cubeBuilder)
+    cubeBuilder = FactSelection()
+    (DDL())*
+    CreateCube(cubeBuilder)
 }
 
 CubeBuilder FactSelection() :
@@ -332,11 +388,11 @@ CubeBuilder FactSelection() :
 {
   <SELECT> <FACTS> pattern = GroupGraphPattern() <SEMI>
   {
-    return new CubeBuilder("", pattern);
+    return new CubeBuilder(pattern);
   }
 }
 
-void DefineDimension(CubeBuilder cubeBuilder) :
+void DefineDimension() :
 {
   String name;
   Element seedPattern;
@@ -351,7 +407,17 @@ void DefineDimension(CubeBuilder cubeBuilder) :
   ( <COMMA> level = Level() { levels.add(level); } )*
   <RPAREN> <SEMI>
   {
-    cubeBuilder.addDimension(new Dimension(name, seedPattern, levels));
+    if (repository instanceof MutableRepository) {
+      ((MutableRepository)repository).addDimension(
+          new Dimension(name, seedPattern, levels));
+    } else {
+      UnsupportedOperationException ex = new UnsupportedOperationException(
+          "The selected repository does not support modifications.");
+      if (!interactive) {
+        throw ex;
+      }
+      System.err.println(ex.getMessage());
+    }
   }
 }
 
@@ -365,7 +431,7 @@ Level Level() :
   { return new Level(name, expression); }
 }
 
-void DefineMeasure(CubeBuilder cubeBuilder) :
+void DefineMeasure() :
 {
   String name;
   Expr expression;
@@ -377,19 +443,134 @@ void DefineMeasure(CubeBuilder cubeBuilder) :
   <WHERE> <LPAREN> seedPattern = TriplesBlock() <RPAREN>
   <WITH> aggregationFunction = String() <SEMI>
   {
-    cubeBuilder.addMeasure(
-            new Measure(name, seedPattern, expression, aggregationFunction));
+    if (repository instanceof MutableRepository) {
+      ((MutableRepository)repository).addMeasure(
+          new Measure(name, seedPattern, expression, aggregationFunction));
+    } else {
+      UnsupportedOperationException ex = new UnsupportedOperationException(
+          "The selected repository does not support modifications.");
+      if (!interactive) {
+        throw ex;
+      }
+      System.err.println(ex.getMessage());
+    }
   }
 }
 
 void CreateCube(CubeBuilder cubeBuilder) :
 {
+  String name;
+  String temp;
+}
+{
+  {
+    if (cubeBuilder == null) {
+      IllegalStateException ex = new IllegalStateException(
+          "No facts have been selected.");
+      if (!interactive) {
+        throw ex;
+      }
+      System.err.println(ex.getMessage());
+    }
+  }
+  <CREATE> <CUBE> name = String() <FROM>
+  temp = String()
+  { cubeBuilder.addDimension(repository.findDimension(temp)); }
+  ( <COMMA> temp = String()
+    { cubeBuilder.addDimension(repository.findDimension(temp)); }
+  )*
+  <WITH>
+  temp = String()
+  { cubeBuilder.addMeasure(repository.findMeasure(temp)); }
+  ( <COMMA> temp = String()
+    { cubeBuilder.addMeasure(repository.findMeasure(temp)); }
+  )*
+  <SEMI>
+  {
+    if (repository instanceof MutableRepository) {
+      ((MutableRepository)repository).addCube(cubeBuilder.build(name));
+    } else {
+      UnsupportedOperationException ex = new UnsupportedOperationException(
+          "The selected repository does not support modifications.");
+      if (!interactive) {
+        throw ex;
+      }
+      System.err.println(ex.getMessage());
+    }
+  }
+}
+
+void DropDimension() :
+{
+  String name;
+}
+{
+  <DIMENSION> name = String() <SEMI>
+  {
+    if (repository instanceof MutableRepository) {
+      ((MutableRepository)repository).removeDimension(repository.findDimension(name));
+    } else {
+      UnsupportedOperationException ex = new UnsupportedOperationException(
+          "The selected repository does not support modifications.");
+      if (!interactive) {
+        throw ex;
+      }
+      System.err.println(ex.getMessage());
+    }
+  }
+}
+
+void DropMeasure() :
+{
+  String name;
+}
+{
+  <MEASURE> name = String() <SEMI>
+  {
+    if (repository instanceof MutableRepository) {
+      ((MutableRepository)repository).removeMeasure(repository.findMeasure(name));
+    } else {
+      UnsupportedOperationException ex = new UnsupportedOperationException(
+          "The selected repository does not support modifications.");
+      if (!interactive) {
+        throw ex;
+      }
+      System.err.println(ex.getMessage());
+    }
+  }
+}
+
+void DropCube() :
+{
+  String name;
+}
+{
+  <CUBE> name = String() <SEMI>
+  {
+    if (repository instanceof MutableRepository) {
+      ((MutableRepository)repository).removeCube(repository.findCube(name));
+    } else {
+      UnsupportedOperationException ex = new UnsupportedOperationException(
+          "The selected repository does not support modifications.");
+      if (!interactive) {
+        throw ex;
+      }
+      System.err.println(ex.getMessage());
+    }
+  }
+}
+
+void CubeSelection() :
+{
+  String name;
   String url;
 }
 {
-  <CREATE> <CUBE> <OVER> url = IRIREF() <SEMI>
+  <USING> <CUBE> name = String() <OVER> url = IRIREF()
+  DatasetClause()
+  <SEMI>
   {
-    session.setCube(cubeBuilder.build());
+    session.setCube(repository.findCube(name));
     session.setSPARQLEndpointURL(url);
   }
 }
@@ -486,38 +667,77 @@ void ComputeMeasures() :
 {
   List<Measure> measures = new ArrayList<Measure>();
   String name;
+  List<Compute.SortCondition> sortConditions = new ArrayList<Compute.SortCondition>();
+  Long limit = null;
+  Long offset = null;
 }
 {
-  <COMPUTE> <LPAREN> name = String()
-  { measures.add(session.getCube().findMeasure(name)); }
-  (<COMMA> name = String()
+  <COMPUTE> <LPAREN>
+  ( <STAR>
+    { measures.addAll(session.getCube().getMeasures()); }
+  | LOOKAHEAD("\"")
+    ( {
+      // Reset after explicit lookahead, so that the beginning of string is not
+      // swallowed and a fresh token is requested afterwards
+      jj_input_stream.backup(1); jj_ntk = -1; token.next = null;
+    }
+    name = String()
     { measures.add(session.getCube().findMeasure(name)); }
-  )* <RPAREN> <SEMI>
+    (<COMMA> name = String()
+      { measures.add(session.getCube().findMeasure(name)); }
+    )* )
+  )
+  <RPAREN>
+  ( <ORDER> <BY>
+    SortCondition(sortConditions) (<COMMA> SortCondition(sortConditions))*
+    ( <LIMIT> limit = Integer() ( <OFFSET> offset = Integer() )? )?
+  )? <SEMI>
   {
-    session.execute(new Compute(measures));
+    session.execute(new Compute(measures, sortConditions, limit, offset));
+  }
+}
+
+void SortCondition(List<Compute.SortCondition> sortConditions) :
+{
+  String name;
+  int direction;
+}
+{
+  name = String()
+  ( <ASC> { direction = Query.ORDER_ASCENDING; }
+  | <DESC> { direction = Query.ORDER_DESCENDING; } )
+  {
+    sortConditions.add(new Compute.SortCondition(name, direction));
   }
 }
 
 /* SPARQL grammar rule delegates */
 void DatasetClause() : {}
 {
-  // Manually lookahead to implement optionality, LOOKAHEAD hint does not work
-  // because rule matches empty string
-  {
-    switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-    case FROM:
+  [ <FROM>
+    {
+      // Reset after explicit lookahead, so that the beginning of string is not
+      // swallowed and a fresh token is requested afterwards
+      jj_input_stream.backup(token.image == null ?
+                    token.endColumn - token.beginColumn : token.image.length());
+      jj_ntk = -1; token.next = null;
       delegate(new DatasetClauseRule());
-      break;
-    default:
-      jj_la1[0] = jj_gen;
-      break;
     }
-  }
+  ]
 }
 
 void Prologue() : {}
 {
-  { delegate(new PrologueRule()); }
+  [ (<BASE> | <PREFIX>)
+    {
+      // Reset after explicit lookahead, so that the beginning of string is not
+      // swallowed and a fresh token is requested afterwards
+      jj_input_stream.backup(token.image == null ?
+                    token.endColumn - token.beginColumn : token.image.length());
+      jj_ntk = -1; token.next = null;
+      delegate(new PrologueRule());
+    }
+  ]
 }
 
 Element GroupGraphPattern() : {}

@@ -26,6 +26,6 @@ import org.junit.Test;
 public class ComputeTest {
     @Test(expected = NullPointerException.class)
     public void testInstantiateWithNull() {
-        new Compute(null);
+        new Compute(null, null, null, null);
     }
 }

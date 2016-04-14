@@ -1,0 +1,8 @@
+USING REPOSITORY "ldbc";
+USING CUBE "Forums, Posts & Tag Classes" OVER <${sparql.endpoint}>;
+SLICE("Moderator Location", "Country", <${country}>);
+SLICE("Tag Class", "", <${tagClass}>);
+ROLLUP("Post", 1);                 # ALL
+ROLLUP("Tag Class", 1);            # ALL
+COMPUTE("Contained Post Count")
+ORDER BY "Contained Post Count" DESC, "Forum ID" ASC;

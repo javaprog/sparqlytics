@@ -16,10 +16,6 @@
 
 package de.tud.inf.db.sparqlytics.repository;
 
-import com.hp.hpl.jena.graph.NodeFactory;
-import com.hp.hpl.jena.graph.Triple;
-import com.hp.hpl.jena.sparql.core.BasicPattern;
-import com.hp.hpl.jena.sparql.syntax.ElementTriplesBlock;
 import de.tud.inf.db.sparqlytics.DummyDimension;
 import de.tud.inf.db.sparqlytics.DummyMeasure;
 import de.tud.inf.db.sparqlytics.model.Cube;
@@ -27,6 +23,10 @@ import de.tud.inf.db.sparqlytics.model.Dimension;
 import de.tud.inf.db.sparqlytics.model.Measure;
 import de.tud.inf.db.sparqlytics.parser.CubeBuilder;
 import java.util.Collections;
+import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.graph.Triple;
+import org.apache.jena.sparql.core.BasicPattern;
+import org.apache.jena.sparql.syntax.ElementTriplesBlock;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
@@ -38,12 +38,12 @@ import org.junit.Test;
 public class DefaultRepositoryTest {
     @Test
     public void testAddRemoveCube() {
-        CubeBuilder builder = new CubeBuilder("test", new ElementTriplesBlock(
+        CubeBuilder builder = new CubeBuilder(new ElementTriplesBlock(
                 BasicPattern.wrap(Collections.singletonList(Triple.createMatch(
                         NodeFactory.createVariable("test"), null, null))))).
                 addMeasure(new DummyMeasure("mes1")).
                 addDimension(new DummyDimension("dim1"));
-        Cube cube = builder.build();
+        Cube cube = builder.build("test");
         DefaultRepository instance = new DefaultRepository();
         assertTrue(instance.addCube(cube));
         assertEquals(cube, instance.findCube("test"));

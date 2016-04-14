@@ -1,0 +1,8 @@
+USING REPOSITORY "ldbc";
+PREFIX xsd:     <http://www.w3.org/2001/XMLSchema#>
+USING CUBE "Messages" OVER <${sparql.endpoint}>;
+DICE("Creation Date", "Day" AS ?day, ?day > xsd:dateTime("${date}"^^xsd:date));
+COMPUTE("Like Count")
+ORDER BY "Like Count" DESC, "Message ID" ASC
+LIMIT 100;
+# missing: filter by "Like Count"

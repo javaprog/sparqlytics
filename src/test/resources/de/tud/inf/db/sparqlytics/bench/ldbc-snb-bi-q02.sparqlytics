@@ -1,0 +1,11 @@
+USING REPOSITORY "ldbc";
+USING CUBE "Messages & Tags" OVER <${sparql.endpoint}>;
+DICE("Location", "Country" AS ?country, ?country=<${country1}> || ?country=<${country2}>);
+ROLLUP("Location", 1);                # Country
+ROLLUP("Creation Day/Month/Year", 1); # Month
+ROLLUP("Creation Date", 3);           # ALL
+COMPUTE("Msg. Count")
+ORDER BY "Msg. Count" DESC, "Tag Name" ASC, "Age Group" ASC, "Gender" ASC,
+         "Creation Day/Month/Year" ASC, "Location" ASC
+LIMIT 100;
+#missing: having count() > 100

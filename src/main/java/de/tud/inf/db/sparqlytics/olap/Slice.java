@@ -17,10 +17,10 @@
 package de.tud.inf.db.sparqlytics.olap;
 
 import de.tud.inf.db.sparqlytics.model.Filter;
-import com.hp.hpl.jena.sparql.core.Var;
-import com.hp.hpl.jena.sparql.expr.E_Equals;
-import com.hp.hpl.jena.sparql.expr.Expr;
-import com.hp.hpl.jena.sparql.expr.ExprVar;
+import org.apache.jena.sparql.core.Var;
+import org.apache.jena.sparql.expr.E_Equals;
+import org.apache.jena.sparql.expr.Expr;
+import org.apache.jena.sparql.expr.ExprVar;
 
 /**
  * A slice operation filters facts with a specific value in a certain dimension.

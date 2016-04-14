@@ -16,22 +16,22 @@
 
 package de.tud.inf.db.sparqlytics.olap;
 
-import com.hp.hpl.jena.graph.NodeFactory;
-import com.hp.hpl.jena.graph.Triple;
-import com.hp.hpl.jena.sparql.core.BasicPattern;
 import de.tud.inf.db.sparqlytics.model.Session;
 import de.tud.inf.db.sparqlytics.model.Dimension;
 import de.tud.inf.db.sparqlytics.model.Filter;
 import de.tud.inf.db.sparqlytics.model.Level;
-import com.hp.hpl.jena.sparql.core.Var;
-import com.hp.hpl.jena.sparql.expr.NodeValue;
-import com.hp.hpl.jena.sparql.syntax.ElementTriplesBlock;
 import de.tud.inf.db.sparqlytics.DummyDimension;
 import de.tud.inf.db.sparqlytics.DummyMeasure;
 import de.tud.inf.db.sparqlytics.parser.CubeBuilder;
 import java.util.Collections;
 import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.graph.Triple;
+import org.apache.jena.sparql.core.BasicPattern;
+import org.apache.jena.sparql.core.Var;
+import org.apache.jena.sparql.expr.NodeValue;
+import org.apache.jena.sparql.syntax.ElementTriplesBlock;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -61,13 +61,13 @@ public class DiceTest {
         Filter filter = new Filter(Var.alloc("test"), NodeValue.TRUE);
         Dice instance = new Dice("dim1", "lev1", filter);
         Session session = new Session();
-        CubeBuilder builder = new CubeBuilder("", new ElementTriplesBlock(
+        CubeBuilder builder = new CubeBuilder(new ElementTriplesBlock(
                 BasicPattern.wrap(Collections.singletonList(Triple.createMatch(
                         NodeFactory.createVariable("test"), null, null))))).
                 addMeasure(new DummyMeasure("mes1"));
         Dimension dim1 = new DummyDimension("dim1");
         Level lev1 = dim1.getLevels().get(0);
-        session.setCube(builder.addDimension(dim1).build());
+        session.setCube(builder.addDimension(dim1).build(""));
         session.execute(instance);
         Map<Pair<Dimension, Level>, Filter> filters = session.getFilters();
         Assert.assertEquals(1, filters.size());

@@ -38,4 +38,8 @@ DEFINE MEASURE "Max. Comment Length"
            snvoc:length ?length
  ) WITH "MAX";
 
-CREATE CUBE OVER <http://localhost:3030/ds/sparql>;
+CREATE CUBE "test" FROM "Location", "Date of Birth"
+WITH "Avg. No. Languages", "Max. Comment Length";
+# end of DDL part
+
+USING CUBE "test" OVER <http://localhost:${dynamic.test.port}/jena-fuseki-war/sparqlytics/query>;

@@ -16,13 +16,13 @@
 
 package de.tud.inf.db.sparqlytics;
 
-import com.hp.hpl.jena.graph.NodeFactory;
-import com.hp.hpl.jena.graph.Triple;
-import com.hp.hpl.jena.sparql.core.BasicPattern;
-import com.hp.hpl.jena.sparql.expr.NodeValue;
-import com.hp.hpl.jena.sparql.syntax.ElementTriplesBlock;
 import de.tud.inf.db.sparqlytics.model.Measure;
 import java.util.Collections;
+import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.graph.Triple;
+import org.apache.jena.sparql.core.BasicPattern;
+import org.apache.jena.sparql.expr.NodeValue;
+import org.apache.jena.sparql.syntax.ElementTriplesBlock;
 
 /**
  * Helper class for tests. All properties except for the name are set to dummy

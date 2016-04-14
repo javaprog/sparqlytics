@@ -1,0 +1,18 @@
+USING REPOSITORY "ldbc";
+PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX snvoc:   <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>
+SELECT FACTS { # should use entailment
+  { {?m rdf:type snvoc:Post} UNION {?m rdf:type snvoc:Comment} }
+  ?m snvoc:hasTag/rdf:type <${tagClass}>
+};
+
+CREATE CUBE "Messages by Topic and Continent"
+FROM "Message Location", "Creation Day/Month/Year"
+WITH "Msg. Count", "Like Count";
+
+USING CUBE "Messages by Topic and Continent" OVER <${sparql.endpoint}>;
+ROLLUP("Message Location", 1); # Continent
+ROLLUP("Creation Day/Month/Year", 1); # Month
+COMPUTE("Msg. Count", "Like Count")
+ORDER BY "Creation Day/Month/Year" ASC, "Message Location" DESC
+LIMIT 100;

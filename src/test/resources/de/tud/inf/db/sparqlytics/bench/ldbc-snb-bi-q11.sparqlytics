@@ -1,0 +1,23 @@
+USING REPOSITORY "ldbc";
+PREFIX snvoc:   <http://www.ldbc.eu/ldbc_socialnet/1.0/vocabulary/>
+SELECT FACTS {
+  ?m snvoc:replyOf ?temp ;
+     snvoc:content ?content ;
+     snvoc:hasCreator ?person ;
+     snvoc:hasTag ?tag .
+  FILTER(!REGEX(?content, "${blacklist}")) .
+  FILTER NOT EXISTS { ?temp snvoc:hasTag ?t . ?m snvoc:hasTag ?t }
+};
+
+DEFINE MEASURE "Reply Count" AS COUNT(?message) WHERE (
+  ?message snvoc:hasTag ?tag
+) WITH "COUNT";
+
+CREATE CUBE "Unrelated Replies" FROM "Person ID", "Tag Name", "Location"
+WITH "Like Count", "Reply Count";
+
+USING CUBE "Unrelated Replies" OVER <${sparql.endpoint}>;
+SLICE("Location", "Country", <${country}>);
+COMPUTE("Like Count", "Reply Count")
+ORDER BY "Like Count" DESC, "Person ID" ASC, "Tag Name" ASC
+LIMIT 100;
